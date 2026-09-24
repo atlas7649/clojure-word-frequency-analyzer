@@ -20,6 +20,14 @@
        (remove #(contains? stop-words %))
        (frequencies)))
 
+(defn sorted-frequencies
+  "Return frequencies sorted by value in descending order, optionally filtering by a minimum count."
+  [freq-map & {:keys [min-count] :or {min-count 0}}]
+  (->> freq-map
+       (remove (fn [[_ count]] (< count min-count)))
+       (sort-by (fn [[_ count]] count))
+       (reverse)))
+
 (defn generate-ngrams
   "Generate n-grams from the provided text."
   [text n]
