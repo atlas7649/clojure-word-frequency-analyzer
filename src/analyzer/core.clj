@@ -40,10 +40,11 @@
     (reduce-kv (fn [m k v] (assoc m k (/ v total)]) {} freq-map)))
 
 (defn generate-ngrams
-  "Generate n-grams from the provided text."
-  [text n]
-  (let [words (tokenize text)]
-    (->> words
+  "Generate n-grams from the provided text, optionally filtering stop words."
+  [text n & {:keys [stop-words] :or {stop-words nil}}]
+  (let [words (tokenize text)
+        filtered-words (if stop-words (remove #(contains? stop-words %) words) words)]
+    (->> filtered-words
          (partition n 1)
          (frequencies))))
 

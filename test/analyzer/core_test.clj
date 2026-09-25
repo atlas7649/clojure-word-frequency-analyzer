@@ -34,4 +34,9 @@
 (deftest test-ngrams
   (testing "Bigram generation"
     (let [text "I love Clojure I love coding"]
-      (is (= 2 ((generate-ngrams text 2) ["i" "love"]))))))
+      (is (= 2 ((generate-ngrams text 2) ["i" "love"])))))
+  (testing "N-gram generation with stop-words"
+    (let [text "The quick brown fox jumps over the lazy dog"
+          stop-words #{"the" "over"}]
+      (is (= 1 ((generate-ngrams text 2 :stop-words stop-words) ["quick" "brown"])))
+      (is (nil? ((generate-ngrams text 2 :stop-words stop-words) ["the" "quick"]))))))
