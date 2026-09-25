@@ -1,6 +1,6 @@
 (ns analyzer.core-test
   (:require [clojure.test :refer [deftest is testing]]
-            [analyzer.core :refer [tokenize frequency-analysis generate-ngrams sorted-frequencies most-common relative-frequencies]]))
+            [analyzer.core :refer [tokenize frequency-analysis vocabulary-size generate-ngrams sorted-frequencies most-common relative-frequencies]]))
 
 (deftest test-tokenize
   (testing "Basic tokenization"
@@ -13,6 +13,15 @@
     (let [text "The quick brown fox jumps over the lazy dog"]
       (is (= 1 ((frequency-analysis text) "quick")))
       (is (nil? ((frequency-analysis text) "the"))))))
+
+(deftest test-vocabulary-size
+  (testing "Vocabulary count with default stop-words"
+    (let [text "The quick brown fox jumps over the lazy dog"]
+      (is (= 7 (vocabulary-size text)))))
+  (testing "Vocabulary count with custom stop-words"
+    (let [text "apple banana apple orange"
+          stop-words #{"orange"}]
+      (is (= 2 (vocabulary-size text :stop-words stop-words))))))
 
 (deftest test-sorted-frequencies
   (testing "Sorting and filtering frequencies"

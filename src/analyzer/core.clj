@@ -20,6 +20,12 @@
        (remove #(contains? stop-words %))
        (frequencies)))
 
+(defn vocabulary-size
+  "Calculate the number of unique words in the text, optionally filtering stop words."
+  [text & {:keys [stop-words] :or {stop-words default-stop-words}}]
+  (count (set (->> (tokenize text)
+                   (remove #(contains? stop-words %))))))
+
 (defn sorted-frequencies
   "Return frequencies sorted by value in descending order, optionally filtering by a minimum count."
   [freq-map & {:keys [min-count] :or {min-count 0}}]
