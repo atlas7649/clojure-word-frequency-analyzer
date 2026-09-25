@@ -33,6 +33,12 @@
   [freq-map n]
   (take n (sorted-frequencies freq-map)))
 
+(defn relative-frequencies
+  "Calculate the relative frequency (percentage) of each word in a frequency map."
+  [freq-map]
+  (let [total (reduce + (vals freq-map))]
+    (reduce-kv (fn [m k v] (assoc m k (/ v total)]) {} freq-map)))
+
 (defn generate-ngrams
   "Generate n-grams from the provided text."
   [text n]

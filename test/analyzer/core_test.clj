@@ -1,6 +1,6 @@
 (ns analyzer.core-test
   (:require [clojure.test :refer [deftest is testing]]
-            [analyzer.core :refer [tokenize frequency-analysis generate-ngrams sorted-frequencies most-common]]))
+            [analyzer.core :refer [tokenize frequency-analysis generate-ngrams sorted-frequencies most-common relative-frequencies]]))
 
 (deftest test-tokenize
   (testing "Basic tokenization"
@@ -25,6 +25,11 @@
     (let [freqs {"apple" 1 "banana" 3 "cherry" 2}]
       (is (= [["banana" 3] ["cherry" 2]] (most-common freqs 2)))
       (is (= [["banana" 3]] (most-common freqs 1))))))
+
+(deftest test-relative-frequencies
+  (testing "Calculating relative frequencies"
+    (let [freqs {"apple" 1 "banana" 3}]
+      (is (= {"apple" (1/4) "banana" (3/4)} (relative-frequencies freqs))))))
 
 (deftest test-ngrams
   (testing "Bigram generation"
