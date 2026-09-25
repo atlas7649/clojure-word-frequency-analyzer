@@ -1,6 +1,6 @@
 (ns analyzer.core-test
   (:require [clojure.test :refer [deftest is testing]]
-            [analyzer.core :refer [tokenize frequency-analysis generate-ngrams sorted-frequencies]]))
+            [analyzer.core :refer [tokenize frequency-analysis generate-ngrams sorted-frequencies most-common]]))
 
 (deftest test-tokenize
   (testing "Basic tokenization"
@@ -19,6 +19,12 @@
     (let [freqs {"apple" 1 "banana" 3 "cherry" 2}]
       (is (= [["banana" 3] ["cherry" 2] ["apple" 1]] (sorted-frequencies freqs)))
       (is (= [["banana" 3] ["cherry" 2]] (sorted-frequencies freqs :min-count 2))))))
+
+(deftest test-most-common
+  (testing "Extracting top N items"
+    (let [freqs {"apple" 1 "banana" 3 "cherry" 2}]
+      (is (= [["banana" 3] ["cherry" 2]] (most-common freqs 2)))
+      (is (= [["banana" 3]] (most-common freqs 1))))))
 
 (deftest test-ngrams
   (testing "Bigram generation"

@@ -28,6 +28,11 @@
        (sort-by (fn [[_ count]] count))
        (reverse)))
 
+(defn most-common
+  "Return the top N most frequent items from a frequency map."
+  [freq-map n]
+  (take n (sorted-frequencies freq-map)))
+
 (defn generate-ngrams
   "Generate n-grams from the provided text."
   [text n]
