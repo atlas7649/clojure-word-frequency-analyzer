@@ -78,6 +78,20 @@
     {:vocabulary-size (vocabulary-size text :stop-words stop-words)
      :top-words (most-common freqs n)}))
 
+(defn keyword-density
+  "Calculate the density of specific keywords in the text relative to the total word count."
+  [text keywords]
+  (let [words (tokenize text)
+        total (count words)]
+    (if (zero? total)
+      (reduce (fn [m k] (assoc m k 0.0)) {} keywords)
+      (let [freqs (frequencies words)]
+        (reduce (fn [m k] 
+                  (let [count (get freqs (str/lower-case k) 0)]
+                    (assoc m k (/ count total))))
+                {} 
+                keywords)))))
+
 (defn analyze-file
   "Read a file and return a map of word frequencies."
   [file-path]

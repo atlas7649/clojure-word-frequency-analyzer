@@ -1,6 +1,6 @@
 (ns analyzer.core-test
   (:require [clojure.test :refer [deftest is testing]]
-            [analyzer.core :refer [tokenize frequency-analysis vocabulary-size generate-ngrams sorted-frequencies most-common relative-frequencies word-length-distribution average-word-length text-summary]]))
+            [analyzer.core :refer [tokenize frequency-analysis vocabulary-size generate-ngrams sorted-frequencies most-common relative-frequencies word-length-distribution average-word-length text-summary keyword-density]]))
 
 (deftest test-tokenize
   (testing "Basic tokenization"
@@ -71,8 +71,20 @@
 
 (deftest test-text-summary
   (testing "Text summary generation"
-    (let [text "Apple banana apple orange cherry apple banana"]
+    (let [text "Apple banana apple orange cherry apple banana"
           stop-words #{"orange"}]
       (let [summary (text-summary text 2 :stop-words stop-words)]
         (is (= 3 (:vocabulary-size summary)))
         (is (= [["apple" 3] ["banana" 2]] (:top-words summary)))))))
+
+(deftest test-keyword-density
+  (testing "Keyword density calculation"
+    (let [text "Clojure is a functional language. Clojure is powerful."
+          keywords ["Clojure" "functional"]
+      (is (= {"Clojure" (/ 2 8) "functional" (/ 1 8)} (keyword-density text keywords)))))
+  (testing "Density with missing keywords"
+    (let [text "Hello world"
+          keywords ["missing"]
+      (is (= {"missing" 0.0} (keyword-density text keywords)))))
+  (testing "Density with empty text"
+    (is (= {"test" 0.0} (keyword-density "" ["test"])))))
