@@ -1,6 +1,6 @@
 (ns analyzer.core-test
   (:require [clojure.test :refer [deftest is testing]]
-            [analyzer.core :refer [tokenize frequency-analysis vocabulary-size generate-ngrams sorted-frequencies most-common relative-frequencies word-length-distribution]]))
+            [analyzer.core :refer [tokenize frequency-analysis vocabulary-size generate-ngrams sorted-frequencies most-common relative-frequencies word-length-distribution average-word-length text-summary]]))
 
 (deftest test-tokenize
   (testing "Basic tokenization"
@@ -60,3 +60,19 @@
           stop-words #{"apple"}]
       ;; "banana" (6), "cherry" (6)
       (is (= {6 2} (word-length-distribution text :stop-words stop-words))))))
+
+(deftest test-average-word-length
+  (testing "Average length with default stop-words"
+    (let [text "The quick brown fox"]
+      ;; "quick"(5) + "brown"(5) + "fox"(3) = 13 / 3
+      (is (= (/ 13 3) (average-word-length text)))))
+  (testing "Average length with empty result"
+    (is (= 0 (average-word-length "the the the" :stop-words #{"the"})))))
+
+(deftest test-text-summary
+  (testing "Text summary generation"
+    (let [text "Apple banana apple orange cherry apple banana"]
+          stop-words #{"orange"}]
+      (let [summary (text-summary text 2 :stop-words stop-words)]
+        (is (= 3 (:vocabulary-size summary)))
+        (is (= [["apple" 3] ["banana" 2]] (:top-words summary)))))))

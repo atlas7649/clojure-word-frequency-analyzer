@@ -62,6 +62,22 @@
        (map count)
        (frequencies)))
 
+(defn average-word-length
+  "Calculate the average length of words in the text, optionally filtering stop words."
+  [text & {:keys [stop-words] :or {stop-words default-stop-words}}]
+  (let [words (->> (tokenize text)
+                    (remove #(contains? stop-words %)))]
+    (if (empty? words)
+      0
+      (/ (reduce + (map count words)) (count words)))))
+
+(defn text-summary
+  "Return a summary containing vocabulary size and the top N most frequent words."
+  [text n & {:keys [stop-words] :or {stop-words default-stop-words}}]
+  (let [freqs (frequency-analysis text :stop-words stop-words)]
+    {:vocabulary-size (vocabulary-size text :stop-words stop-words)
+     :top-words (most-common freqs n)}))
+
 (defn analyze-file
   "Read a file and return a map of word frequencies."
   [file-path]
