@@ -97,3 +97,17 @@
   [file-path]
   (let [content (slurp file-path)]
     (frequency-analysis content)))
+
+(defn text-readability-score
+  "Calculate a basic readability score based on average word length and average sentence length.
+   Higher scores indicate more complex text."
+  [text]
+  (let [sentences (str/split text #[\\.!] )]
+       sentence-count (count (remove str/blank? sentences))
+       words (tokenize text)
+       word-count (count words)
+       avg-sentence-length (if (zero? sentence-count) 0 (/ word-count sentence-count))
+       avg-word-length (if (zero? word-count) 0 (/ (reduce + (map count words)) word-count))]
+    (if (or (zero? sentence-count) (zero? word-count))
+      0.0
+      (+ (* 0.4 avg-sentence-length) (* 0.6 avg-word-length)))))

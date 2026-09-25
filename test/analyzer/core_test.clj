@@ -1,6 +1,6 @@
 (ns analyzer.core-test
   (:require [clojure.test :refer [deftest is testing]]
-            [analyzer.core :refer [tokenize frequency-analysis vocabulary-size generate-ngrams sorted-frequencies most-common relative-frequencies word-length-distribution average-word-length text-summary keyword-density]]))
+            [analyzer.core :refer [tokenize frequency-analysis vocabulary-size generate-ngrams sorted-frequencies most-common relative-frequencies word-length-distribution average-word-length text-summary keyword-density text-readability-score]]))
 
 (deftest test-tokenize
   (testing "Basic tokenization"
@@ -88,3 +88,15 @@
       (is (= {"missing" 0.0} (keyword-density text keywords)))))
   (testing "Density with empty text"
     (is (= {"test" 0.0} (keyword-density "" ["test"])))))
+
+(deftest test-readability-score
+  (testing "Readability score calculation"
+    (let [text "This is a simple sentence. This is another one."]
+      ;; Words: [this is a simple sentence this is another one] (9 words)
+      ;; Sentences: 2
+      ;; avg-sentence-length: 9 / 2 = 4.5
+      ;; avg-word-length: (4+2+1+6+8+4+2+7+3) / 9 = 37 / 9 ≈ 4.11
+      ;; Score: 0.4 * 4.5 + 0.6 * (37/9) = 1.8 + 22.2/9 = 1.8 + 2.466 = 4.266
+      (is (> (text-readability-score text) 4.0))))
+  (testing "Readability score with empty text"
+    (is (= 0.0 (text-readability-score "")))))
