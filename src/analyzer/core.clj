@@ -132,3 +132,31 @@
         intersection (count (clojure.set/intersection set1 set2))
         union (count (clojure.set/union set1 set2))]
     (if (zero? union) 0.0 (/ intersection union))))
+
+(defn calculate-idf
+  "Calculate Inverse Document Frequency for words across a collection of documents."
+  [docs & {:keys [stop-words] :or {stop-words default-stop-words}}]
+  (let [num-docs (count docs)
+        all-tokens (map #(set (->> (tokenize %) (remove #(contains? stop-words %)))) docs)
+        vocabulary (apply set (mapcat identity all-tokens)]
+    (reduce-kv (fn [m word tokens-sets]
+                  (let [docs-with-word (count (filter #(contains? % word) tokens-sets))]
+                    (assoc m word (Math/log (/ num-docs (max 1 docs-with-word))))))
+                {} 
+                vocabulary 
+                all-tokens)))
+
+(defn tf-idf-analysis
+  "Calculate TF-IDF scores for a set of documents."
+  [docs-map & {:keys [stop-words] :or {stop-words default-stop-words}}]
+  (let [docs (vals docs-map)
+        idf-map (calculate-idf docs :stop-words stop-words)]
+    (reduce-kv (fn [m label text]
+                  (let [tf (relative-frequencies (frequency-analysis text :stop-words stop-words))
+                        tfidf (reduce-kv (fn [inner-m word tf-val]
+                                             (assoc inner-m word (* tf-val (get idf-map word 0))))
+                                          {} 
+                                          tf)]
+                    (assoc m label tfidf)))
+                {} 
+                docs-map)))

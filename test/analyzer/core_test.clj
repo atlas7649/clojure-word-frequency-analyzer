@@ -1,6 +1,6 @@
 (ns analyzer.core-test
   (:require [clojure.test :refer [deftest is testing]]
-            [analyzer.core :refer [tokenize frequency-analysis vocabulary-size generate-ngrams sorted-frequencies most-common relative-frequencies word-length-distribution average-word-length text-summary keyword-density text-readability-score text-complexity-metrics batch-frequency-analysis jaccard-similarity]]))
+            [analyzer.core :refer [tokenize frequency-analysis vocabulary-size generate-ngrams sorted-frequencies most-common relative-frequencies word-length-distribution average-word-length text-summary keyword-density text-readability-score text-complexity-metrics batch-frequency-analysis jaccard-similarity calculate-idf tf-idf-analysis]]))
 
 (deftest test-tokenize
   (testing "Basic tokenization"
@@ -133,3 +133,23 @@
       ;; Intersection: {banana cherry} (2)
       ;; Union: {apple banana cherry date} (4)
       (is (= 0.5 (jaccard-similarity t1 t2 :stop-words #{}))))))
+
+(deftest test-tfidf
+  (testing "IDF calculation"
+    (let [docs ["apple banana" "apple cherry" "banana date"]
+          idf (calculate-idf docs :stop-words #{})]
+      ;; apple appears in 2/3 docs: log(3/2)
+      ;; banana appears in 2/3 docs: log(3/2)
+      ;; cherry appears in 1/3 docs: log(3/1)
+      ;; date appears in 1/3 docs: log(3/1)
+      (is (= (Math/log 1.5) (get idf "apple")))
+      (is (= (Math/log 3.0) (get idf "cherry")))))
+  (testing "TF-IDF Analysis"
+    (let [docs-map {"d1" "apple apple banana" "d2" "apple cherry"}
+          tfidf (tf-idf-analysis docs-map :stop-words #{})]
+      ;; d1 TF: apple=2/3, banana=1/3
+      ;; d2 TF: apple=1/2, cherry=1/2
+      ;; IDF: apple=log(2/2)=0, banana=log(2/1)=log 2, cherry=log(2/1)=log 2
+      (is (= 0.0 (get-in tfidf ["d1" "apple"])))
+      (is (= (* (/ 1 3) (Math/log 2)) (get-in tfidf ["d1" "banana"])))
+      (is (= (* (/ 1 2) (Math/log 2)) (get-in tfidf ["d2" "cherry"]))))))
