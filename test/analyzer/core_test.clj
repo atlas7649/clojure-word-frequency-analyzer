@@ -1,6 +1,6 @@
 (ns analyzer.core-test
   (:require [clojure.test :refer [deftest is testing]]
-            [analyzer.core :refer [tokenize frequency-analysis vocabulary-size generate-ngrams sorted-frequencies most-common relative-frequencies]]))
+            [analyzer.core :refer [tokenize frequency-analysis vocabulary-size generate-ngrams sorted-frequencies most-common relative-frequencies word-length-distribution]]))
 
 (deftest test-tokenize
   (testing "Basic tokenization"
@@ -49,3 +49,14 @@
           stop-words #{"the" "over"}]
       (is (= 1 ((generate-ngrams text 2 :stop-words stop-words) ["quick" "brown"])))
       (is (nil? ((generate-ngrams text 2 :stop-words stop-words) ["the" "quick"]))))))
+
+(deftest test-word-length-distribution
+  (testing "Length distribution with default stop-words"
+    (let [text "The quick brown fox"]
+      ;; "the" is a stopword. "quick" (5), "brown" (5), "fox" (3)
+      (is (= {5 2 3 1} (word-length-distribution text)))))
+  (testing "Length distribution with custom stop-words"
+    (let [text "apple banana cherry"
+          stop-words #{"apple"}]
+      ;; "banana" (6), "cherry" (6)
+      (is (= {6 2} (word-length-distribution text :stop-words stop-words))))))

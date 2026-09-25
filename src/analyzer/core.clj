@@ -54,6 +54,14 @@
          (partition n 1)
          (frequencies))))
 
+(defn word-length-distribution
+  "Calculate the frequency of word lengths in the text, optionally filtering stop words."
+  [text & {:keys [stop-words] :or {stop-words default-stop-words}}]
+  (->> (tokenize text)
+       (remove #(contains? stop-words %))
+       (map count)
+       (frequencies)))
+
 (defn analyze-file
   "Read a file and return a map of word frequencies."
   [file-path]
