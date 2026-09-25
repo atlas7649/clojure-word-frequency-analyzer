@@ -1,12 +1,18 @@
 (ns analyzer.core-test
   (:require [clojure.test :refer [deftest is testing]]
-            [analyzer.core :refer [tokenize frequency-analysis vocabulary-size generate-ngrams sorted-frequencies most-common relative-frequencies word-length-distribution average-word-length text-summary keyword-density text-readability-score text-complexity-metrics batch-frequency-analysis jaccard-similarity calculate-idf tf-idf-analysis]]))
+            [analyzer.core :refer [tokenize frequency-analysis vocabulary-size generate-ngrams sorted-frequencies most-common relative-frequencies word-length-distribution average-word-length text-summary keyword-density text-readability-score text-complexity-metrics batch-frequency-analysis jaccard-similarity calculate-idf tf-idf-analysis clean-text]]))
 
 (deftest test-tokenize
   (testing "Basic tokenization"
     (is (= ["hello" "world"] (tokenize "Hello world!"))))
   (testing "Whitespace handling"
     (is (= ["foo" "bar"] (tokenize "  foo   bar  ")))))
+
+(deftest test-clean-text
+  (testing "Default cleaning"
+    (is (= "Hello world " (clean-text "Hello world!"))))
+  (testing "Custom cleaning pattern"
+    (is (= "Hello world!" (clean-text "Hello world!" :pattern #"[0-9]")))))
 
 (deftest test-frequency-analysis
   (testing "Word counting with default stop-words"

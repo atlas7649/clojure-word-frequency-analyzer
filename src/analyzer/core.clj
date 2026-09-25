@@ -4,13 +4,18 @@
 (def default-stop-words
   #{"the" "and" "a" "an" "of" "to" "in" "is" "it" "that" "as" "for" "was" "with" "on"})
 
+(defn clean-text
+  "Remove specific patterns from text. By default, removes non-alphanumeric characters except spaces."
+  [text & {:keys [pattern] :or {pattern #[^\W&&[^\s]]}}]
+  (str/replace text pattern ""))
+
 (defn tokenize
   "Split text into a sequence of lowercase words, removing non-alphanumeric characters."
   [text]
   (->> text
        (str/lower-case)
+       (clean-text)
        (str/split #\s+)
-       (map #(str/replace % #[^\W] ""))
        (remove empty?)))
 
 (defn frequency-analysis
