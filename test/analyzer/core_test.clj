@@ -1,6 +1,6 @@
 (ns analyzer.core-test
   (:require [clojure.test :refer [deftest is testing]]
-            [analyzer.core :refer [tokenize frequency-analysis vocabulary-size generate-ngrams sorted-frequencies most-common relative-frequencies word-length-distribution average-word-length text-summary keyword-density text-readability-score]]))
+            [analyzer.core :refer [tokenize frequency-analysis vocabulary-size generate-ngrams sorted-frequencies most-common relative-frequencies word-length-distribution average-word-length text-summary keyword-density text-readability-score text-complexity-metrics]]))
 
 (deftest test-tokenize
   (testing "Basic tokenization"
@@ -100,3 +100,16 @@
       (is (> (text-readability-score text) 4.0))))
   (testing "Readability score with empty text"
     (is (= 0.0 (text-readability-score "")))))
+
+(deftest test-text-complexity-metrics
+  (testing "Complexity metrics aggregation"
+    (let [text "The quick brown fox jumps over the lazy dog."]
+      (let [metrics (text-complexity-metrics text)]
+        (is (number? (:readability-score metrics)))
+        (is (= 7 (:vocabulary-size metrics)))
+        (is (= (/ 13 3) (:average-word-length metrics))))))
+  (testing "Complexity metrics with empty text"
+    (let [metrics (text-complexity-metrics "")]
+      (is (= 0.0 (:readability-score metrics)))
+      (is (= 0 (:vocabulary-size metrics)))
+      (is (= 0 (:average-word-length metrics))))))

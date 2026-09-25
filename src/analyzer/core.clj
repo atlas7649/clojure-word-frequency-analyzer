@@ -111,3 +111,10 @@
     (if (or (zero? sentence-count) (zero? word-count))
       0.0
       (+ (* 0.4 avg-sentence-length) (* 0.6 avg-word-length)))))
+
+(defn text-complexity-metrics
+  "Aggregate various complexity metrics for the given text."
+  [text & {:keys [stop-words] :or {stop-words default-stop-words}}]
+  {:readability-score (text-readability-score text)
+   :vocabulary-size (vocabulary-size text :stop-words stop-words)
+   :average-word-length (average-word-length text :stop-words stop-words)})
