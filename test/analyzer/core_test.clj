@@ -1,6 +1,6 @@
 (ns analyzer.core-test
   (:require [clojure.test :refer [deftest is testing]]
-            [analyzer.core :refer [tokenize frequency-analysis vocabulary-size generate-ngrams sorted-frequencies most-common relative-frequencies word-length-distribution average-word-length text-summary keyword-density text-readability-score text-complexity-metrics]]))
+            [analyzer.core :refer [tokenize frequency-analysis vocabulary-size generate-ngrams sorted-frequencies most-common relative-frequencies word-length-distribution average-word-length text-summary keyword-density text-readability-score text-complexity-metrics batch-frequency-analysis jaccard-similarity]]))
 
 (deftest test-tokenize
   (testing "Basic tokenization"
@@ -113,3 +113,23 @@
       (is (= 0.0 (:readability-score metrics)))
       (is (= 0 (:vocabulary-size metrics)))
       (is (= 0 (:average-word-length metrics))))))
+
+(deftest test-batch-analysis
+  (testing "Analyzing multiple texts"
+    (let [texts {"doc1" "apple banana apple" "doc2" "banana cherry"}]
+      (let [results (batch-frequency-analysis texts :stop-words #{})]
+        (is (= 2 ((get results "doc1") "apple")))
+        (is (= 1 ((get results "doc2") "cherry")))))))
+
+(deftest test-jaccard-similarity
+  (testing "Similarity between identical texts"
+    (is (= 1.0 (jaccard-similarity "the quick brown fox" "the quick brown fox"))))
+  (testing "Similarity between disjoint texts"
+    (is (= 0.0 (jaccard-similarity "apple banana" "cherry date"))))
+  (testing "Partial similarity"
+    (let [t1 "apple banana cherry"
+          t2 "banana cherry date"]
+      ;; Sets: {apple banana cherry}, {banana cherry date}
+      ;; Intersection: {banana cherry} (2)
+      ;; Union: {apple banana cherry date} (4)
+      (is (= 0.5 (jaccard-similarity t1 t2 :stop-words #{}))))))

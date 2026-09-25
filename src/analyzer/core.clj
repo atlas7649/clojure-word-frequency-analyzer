@@ -118,3 +118,17 @@
   {:readability-score (text-readability-score text)
    :vocabulary-size (vocabulary-size text :stop-words stop-words)
    :average-word-length (average-word-length text :stop-words stop-words)})
+
+(defn batch-frequency-analysis
+  "Process multiple texts and return a map of labels to frequency maps."
+  [texts-map & {:keys [stop-words] :or {stop-words default-stop-words}}]
+  (reduce-kv (fn [m label text] (assoc m label (frequency-analysis text :stop-words stop-words))) {} texts-map))
+
+(defn jaccard-similarity
+  "Calculate Jaccard similarity between two texts based on their sets of words."
+  [text1 text2 & {:keys [stop-words] :or {stop-words default-stop-words}}]
+  (let [set1 (set (->> (tokenize text1) (remove #(contains? stop-words %))))
+        set2 (set (->> (tokenize text2) (remove #(contains? stop-words %))))
+        intersection (count (clojure.set/intersection set1 set2))
+        union (count (clojure.set/union set1 set2))]
+    (if (zero? union) 0.0 (/ intersection union))))
