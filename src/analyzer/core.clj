@@ -6,7 +6,7 @@
 
 (defn clean-text
   "Remove specific patterns from text. By default, removes non-alphanumeric characters except spaces."
-  [text & {:keys [pattern] :or {pattern #[^\W&&[^\s]]}}]
+  [text & {:keys [pattern] :or {pattern #[^\\W&&[^\\s]]}}]
   (str/replace text pattern ""))
 
 (defn tokenize
@@ -15,7 +15,7 @@
   (->> text
        (str/lower-case)
        (clean-text)
-       (str/split #\s+)
+       (str/split #\\s+)
        (remove empty?)))
 
 (defn frequency-analysis
@@ -165,3 +165,20 @@
                     (assoc m label tfidf)))
                 {} 
                 docs-map)))
+
+(defn lexical-diversity
+  "Calculate Type-Token Ratio (TTR) which is vocabulary size divided by total tokens."
+  [text & {:keys [stop-words] :or {stop-words default-stop-words}}]
+  (let [tokens (->> (tokenize text) (remove #(contains? stop-words %)))]
+    (if (empty? tokens)
+      0.0
+      (/ (count (set tokens)) (count tokens)))))
+
+(defn global-ngram-analysis
+  "Calculate total frequencies of n-grams across multiple documents."
+  [docs-map n & {:keys [stop-words] :or {stop-words nil}}]
+  (let [all-ngrams (mapv #(generate-ngrams % n :stop-words stop-words) (vals docs-map))]
+    (reduce-kv (fn [acc ngram count]
+                  (assoc acc ngram (+ (get acc ngram 0) count)))
+                {} 
+                (apply merge-with + all-ngrams))))

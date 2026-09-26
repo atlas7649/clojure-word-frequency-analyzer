@@ -1,6 +1,6 @@
 (ns analyzer.core-test
   (:require [clojure.test :refer [deftest is testing]]
-            [analyzer.core :refer [tokenize frequency-analysis vocabulary-size generate-ngrams sorted-frequencies most-common relative-frequencies word-length-distribution average-word-length text-summary keyword-density text-readability-score text-complexity-metrics batch-frequency-analysis jaccard-similarity calculate-idf tf-idf-analysis clean-text]]))
+            [analyzer.core :refer [tokenize frequency-analysis vocabulary-size generate-ngrams sorted-frequencies most-common relative-frequencies word-length-distribution average-word-length text-summary keyword-density text-readability-score text-complexity-metrics batch-frequency-analysis jaccard-similarity calculate-idf tf-idf-analysis clean-text lexical-diversity global-ngram-analysis]]))
 
 (deftest test-tokenize
   (testing "Basic tokenization"
@@ -159,3 +159,21 @@
       (is (= 0.0 (get-in tfidf ["d1" "apple"])))
       (is (= (* (/ 1 3) (Math/log 2)) (get-in tfidf ["d1" "banana"])))
       (is (= (* (/ 1 2) (Math/log 2)) (get-in tfidf ["d2" "cherry"]))))))
+
+(deftest test-lexical-diversity
+  (testing "Lexical diversity calculation"
+    (let [text "apple banana apple orange"]
+      ;; Tokens: [apple banana apple orange] (4)
+      ;; Unique: {apple banana orange} (3)
+      ;; TTR: 3/4 = 0.75
+      (is (= 0.75 (lexical-diversity text :stop-words #{})))))
+  (testing "Lexical diversity with empty text"
+    (is (= 0.0 (lexical-diversity "")))))
+
+(deftest test-global-ngram-analysis
+  (testing "Global n-gram frequencies"
+    (let [docs {"d1" "i love clojure" "d2" "i love coding"}
+          ngrams (global-ngram-analysis docs 2 :stop-words #{})]
+      (is (= 2 (get ngrams ["i" "love"])))
+      (is (= 1 (get ngrams ["love" "clojure"])))
+      (is (= 1 (get ngrams ["love" "coding"]))))))
