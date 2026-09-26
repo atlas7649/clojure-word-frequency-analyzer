@@ -1,6 +1,6 @@
 (ns analyzer.core-test
   (:require [clojure.test :refer [deftest is testing]]
-            [analyzer.core :refer [tokenize frequency-analysis vocabulary-size generate-ngrams sorted-frequencies most-common relative-frequencies word-length-distribution average-word-length text-summary keyword-density text-readability-score text-complexity-metrics batch-frequency-analysis jaccard-similarity calculate-idf tf-idf-analysis clean-text lexical-diversity global-ngram-analysis normalize-text add-stop-words remove-stop-words]]))
+            [analyzer.core :refer [tokenize frequency-analysis vocabulary-size generate-ngrams sorted-frequencies most-common relative-frequencies word-length-distribution average-word-length text-summary keyword-density text-readability-score text-complexity-metrics batch-frequency-analysis jaccard-similarity calculate-idf tf-idf-analysis clean-text lexical-diversity global-ngram-analysis normalize-text add-stop-words remove-stop-words common-words-analysis document-frequency-mapping]]))
 
 (deftest test-tokenize
   (testing "Basic tokenization"
@@ -191,3 +191,18 @@
       (is (= 2 (get ngrams ["i" "love"])))
       (is (= 1 (get ngrams ["love" "clojure"])))
       (is (= 1 (get ngrams ["love" "coding"]))))))
+
+(deftest test-common-words
+  (testing "Finding words common to all documents"
+    (let [batch-freqs {"d1" {"apple" 1 "banana" 1} "d2" {"banana" 1 "cherry" 1}}]
+      (is (= #{"banana"} (common-words-analysis batch-freqs)))))
+  (testing "Common words with no overlap"
+    (let [batch-freqs {"d1" {"apple" 1} "d2" {"banana" 1}}]
+      (is (= #{} (common-words-analysis batch-freqs)))))
+  (testing "Common words with empty batch"
+    (is (= #{} (common-words-analysis {})))))
+
+(deftest test-document-frequency
+  (testing "Calculating document frequency"
+    (let [batch-freqs {"d1" {"apple" 1 "banana" 1} "d2" {"banana" 1 "cherry" 1}}]
+      (is (= {"apple" 1 "banana" 2 "cherry" 1} (document-frequency-mapping batch-freqs))))))

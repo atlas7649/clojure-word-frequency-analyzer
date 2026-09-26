@@ -200,3 +200,17 @@
                   (assoc acc ngram (+ (get acc ngram 0) count)))
                 {} 
                 (apply merge-with + all-ngrams))))
+
+(defn common-words-analysis
+  "Return words that appear in all analyzed documents in the provided frequency map."
+  [batch-freqs]
+  (if (empty? batch-freqs)
+    #{}
+    (let [word-sets (map set (vals batch-freqs))]
+      (apply clojure.set/intersection word-sets))))
+
+(defn document-frequency-mapping
+  "Return a map where keys are words and values are the number of documents containing that word."
+  [batch-freqs]
+  (let [all-words (mapcat keys (vals batch-freqs))]
+    (frequencies all-words)))
