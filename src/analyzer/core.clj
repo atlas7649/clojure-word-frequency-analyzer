@@ -4,6 +4,24 @@
 (def default-stop-words
   #{"the" "and" "a" "an" "of" "to" "in" "is" "it" "that" "as" "for" "was" "with" "on"})
 
+(defn add-stop-words
+  "Add a collection of words to an existing set of stop-words."
+  [stop-words words]
+  (into stop-words words))
+
+(defn remove-stop-words
+  "Remove a collection of words from an existing set of stop-words."
+  [stop-words words]
+  (take-set stop-words words))
+
+(defn normalize-text
+  "Perform basic normalization: lower-case, trim, and collapse multiple spaces."
+  [text]
+  (-> text
+       (str/lower-case)
+       (str/trim)
+       (str/replace #"\\s+" " ")))
+
 (defn clean-text
   "Remove specific patterns from text. By default, removes non-alphanumeric characters except spaces."
   [text & {:keys [pattern] :or {pattern #[^\\W&&[^\\s]]}}]
@@ -13,7 +31,7 @@
   "Split text into a sequence of lowercase words, removing non-alphanumeric characters."
   [text]
   (->> text
-       (str/lower-case)
+       (normalize-text)
        (clean-text)
        (str/split #\\s+)
        (remove empty?)))

@@ -1,12 +1,26 @@
 (ns analyzer.core-test
   (:require [clojure.test :refer [deftest is testing]]
-            [analyzer.core :refer [tokenize frequency-analysis vocabulary-size generate-ngrams sorted-frequencies most-common relative-frequencies word-length-distribution average-word-length text-summary keyword-density text-readability-score text-complexity-metrics batch-frequency-analysis jaccard-similarity calculate-idf tf-idf-analysis clean-text lexical-diversity global-ngram-analysis]]))
+            [analyzer.core :refer [tokenize frequency-analysis vocabulary-size generate-ngrams sorted-frequencies most-common relative-frequencies word-length-distribution average-word-length text-summary keyword-density text-readability-score text-complexity-metrics batch-frequency-analysis jaccard-similarity calculate-idf tf-idf-analysis clean-text lexical-diversity global-ngram-analysis normalize-text add-stop-words remove-stop-words]]))
 
 (deftest test-tokenize
   (testing "Basic tokenization"
     (is (= ["hello" "world"] (tokenize "Hello world!"))))
   (testing "Whitespace handling"
     (is (= ["foo" "bar"] (tokenize "  foo   bar  ")))))
+
+(deftest test-normalize-text
+  (testing "Text normalization"
+    (is (= "hello world" (normalize-text "  Hello   World  ")))))
+
+(deftest test-stop-word-management
+  (testing "Adding stop words"
+    (let [stops #{"the"} 
+          new-stops (add-stop-words stops ["and" "a"])]
+      (is (= #{"the" "and" "a"} new-stops))))
+  (testing "Removing stop words"
+    (let [stops #{"the" "and"} 
+          new-stops (remove-stop-words stops ["the"])]
+      (is (= #{"and"} new-stops)))))
 
 (deftest test-clean-text
   (testing "Default cleaning"
