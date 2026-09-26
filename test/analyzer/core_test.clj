@@ -1,6 +1,6 @@
 (ns analyzer.core-test
   (:require [clojure.test :refer [deftest is testing]]
-            [analyzer.core :refer [tokenize frequency-analysis vocabulary-size generate-ngrams sorted-frequencies most-common relative-frequencies word-length-distribution average-word-length text-summary keyword-density text-readability-score text-complexity-metrics batch-frequency-analysis jaccard-similarity calculate-idf tf-idf-analysis clean-text lexical-diversity global-ngram-analysis normalize-text add-stop-words remove-stop-words common-words-analysis document-frequency-mapping]]))
+            [analyzer.core :refer [tokenize frequency-analysis vocabulary-size generate-ngrams sorted-frequencies most-common relative-frequencies word-length-distribution average-word-length text-summary keyword-density text-readability-score text-complexity-metrics batch-frequency-analysis jaccard-similarity calculate-idf tf-idf-analysis tf-idf-top-terms clean-text lexical-diversity global-ngram-analysis normalize-text add-stop-words remove-stop-words common-words-analysis document-frequency-mapping]]))
 
 (deftest test-tokenize
   (testing "Basic tokenization"
@@ -172,7 +172,14 @@
       ;; IDF: apple=log(2/2)=0, banana=log(2/1)=log 2, cherry=log(2/1)=log 2
       (is (= 0.0 (get-in tfidf ["d1" "apple"])))
       (is (= (* (/ 1 3) (Math/log 2)) (get-in tfidf ["d1" "banana"])))
-      (is (= (* (/ 1 2) (Math/log 2)) (get-in tfidf ["d2" "cherry"]))))))
+      (is (= (* (/ 1 2) (Math/log 2)) (get-in tfidf ["d2" "cherry"])))))
+  (testing "TF-IDF Top Terms"
+    (let [docs-map {"d1" "apple apple banana" "d2" "apple cherry"}
+          top-terms (tf-idf-top-terms docs-map 1 :stop-words #{})]
+      ;; d1: banana is most important (apple is 0.0)
+      ;; d2: cherry is most important (apple is 0.0)
+      (is (= [["banana" (* (/ 1 3) (Math/log 2))]] (get top-terms "d1")))
+      (is (= [["cherry" (* (/ 1 2) (Math/log 2))]] (get top-terms "d2")))))))
 
 (deftest test-lexical-diversity
   (testing "Lexical diversity calculation"

@@ -161,13 +161,13 @@
   [docs & {:keys [stop-words] :or {stop-words default-stop-words}}]
   (let [num-docs (count docs)
         all-tokens (map #(set (->> (tokenize %) (remove #(contains? stop-words %)))) docs)
-        vocabulary (apply set (mapcat identity all-tokens)]
-    (reduce-kv (fn [m word tokens-sets]
-                  (let [docs-with-word (count (filter #(contains? % word) tokens-sets))]
+        vocabulary (apply set (mapcat identity all-tokens))]
+    (reduce-kv (fn [m word _]
+                  (let [docs-with-word (count (filter #(contains? % word) all-tokens))]
                     (assoc m word (Math/log (/ num-docs (max 1 docs-with-word))))))
                 {} 
                 vocabulary 
-                all-tokens)))
+                nil)))
 
 (defn tf-idf-analysis
   "Calculate TF-IDF scores for a set of documents."
@@ -183,6 +183,15 @@
                     (assoc m label tfidf)))
                 {} 
                 docs-map)))
+
+(defn tf-idf-top-terms
+  "Extract the top N terms for each document based on TF-IDF scores."
+  [docs-map n & {:keys [stop-words] :or {stop-words default-stop-words}}]
+  (let [tfidf-results (tf-idf-analysis docs-map :stop-words stop-words)]
+    (reduce-kv (fn [m label scores]
+                  (assoc m label (most-common scores n)))
+                {} 
+                tfidf-results)))
 
 (defn lexical-diversity
   "Calculate Type-Token Ratio (TTR) which is vocabulary size divided by total tokens."
