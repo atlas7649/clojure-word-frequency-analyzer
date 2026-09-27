@@ -1,6 +1,6 @@
 (ns analyzer.core-test
   (:require [clojure.test :refer [deftest is testing]]
-            [analyzer.core :refer [tokenize frequency-analysis vocabulary-size generate-ngrams sorted-frequencies most-common relative-frequencies word-length-distribution average-word-length text-summary keyword-density text-readability-score text-complexity-metrics batch-frequency-analysis jaccard-similarity calculate-idf tf-idf-analysis tf-idf-top-terms clean-text lexical-diversity global-ngram-analysis normalize-text add-stop-words remove-stop-words common-words-analysis document-frequency-mapping shannon-entropy]]))
+            [analyzer.core :refer [tokenize frequency-analysis vocabulary-size generate-ngrams sorted-frequencies most-common relative-frequencies word-length-distribution average-word-length text-summary keyword-density text-readability-score text-complexity-metrics batch-frequency-analysis jaccard-similarity cosine-similarity manhattan-distance calculate-idf tf-idf-analysis tf-idf-top-terms clean-text lexical-diversity global-ngram-analysis normalize-text add-stop-words remove-stop-words common-words-analysis document-frequency-mapping shannon-entropy]]))
 
 (deftest test-tokenize
   (testing "Basic tokenization"
@@ -143,18 +143,24 @@
         (is (= 2 ((get results "doc1") "apple")))
         (is (= 1 ((get results "doc2") "cherry")))))))
 
-(deftest test-jaccard-similarity
-  (testing "Similarity between identical texts"
-    (is (= 1.0 (jaccard-similarity "the quick brown fox" "the quick brown fox"))))
-  (testing "Similarity between disjoint texts"
+(deftest test-similarity-metrics
+  (testing "Jaccard similarity"
+    (is (= 1.0 (jaccard-similarity "the quick brown fox" "the quick brown fox")))
     (is (= 0.0 (jaccard-similarity "apple banana" "cherry date"))))
-  (testing "Partial similarity"
-    (let [t1 "apple banana cherry"
-          t2 "banana cherry date"]
-      ;; Sets: {apple banana cherry}, {banana cherry date}
-      ;; Intersection: {banana cherry} (2)
-      ;; Union: {apple banana cherry date} (4)
-      (is (= 0.5 (jaccard-similarity t1 t2 :stop-words #{}))))))
+  (testing "Cosine similarity"
+    (let [t1 "apple apple banana"
+          t2 "apple banana banana"]
+      ;; f1: {apple 2, banana 1}, f2: {apple 1, banana 2}
+      ;; dot: 2*1 + 1*2 = 4
+      ;; mag1: sqrt(4+1)=sqrt(5), mag2: sqrt(1+4)=sqrt(5)
+      ;; cos: 4 / (sqrt(5)*sqrt(5)) = 4/5 = 0.8
+      (is (= 0.8 (cosine-similarity t1 t2 :stop-words #{})))))
+  (testing "Manhattan distance"
+    (let [t1 "apple apple banana"
+          t2 "apple banana banana"]
+      ;; f1: {apple 2, banana 1}, f2: {apple 1, banana 2}
+      ;; dist: |2-1| + |1-2| = 1 + 1 = 2
+      (is (= 2 (manhattan-distance t1 t2 :stop-words #{}))))))
 
 (deftest test-tfidf
   (testing "IDF calculation"
@@ -173,7 +179,7 @@
       ;; d2 TF: apple=1/2, cherry=1/2
       ;; IDF: apple=log(2/2)=0, banana=log(2/1)=log 2, cherry=log(2/1)=log 2
       (is (= 0.0 (get-in tfidf ["d1" "apple"])))
-      (is (= (* (/ 1 3) (Math/log 2)) (get-in tfidf ["d1" "banana"])))
+      (is (= (* (/ 1 3) (Math/log 2)) (get-in tfidf ["d1" "banana")))
       (is (= (* (/ 1 2) (Math/log 2)) (get-in tfidf ["d2" "cherry"])))))
   (testing "TF-IDF Top Terms"
     (let [docs-map {"d1" "apple apple banana" "d2" "apple cherry"}

@@ -157,6 +157,27 @@
         union (count (clojure.set/union set1 set2))]
     (if (zero? union) 0.0 (/ intersection union))))
 
+(defn cosine-similarity
+  "Calculate Cosine Similarity between two texts based on word frequency vectors."
+  [text1 text2 & {:keys [stop-words] :or {stop-words default-stop-words}}]
+  (let [f1 (frequency-analysis text1 :stop-words stop-words)
+        f2 (frequency-analysis text2 :stop-words stop-words)
+        all-words (set (concat (keys f1) (keys f2)))
+        dot-product (reduce + (map (fn [w] (* (get f1 w 0) (get f2 w 0))) all-words))
+        mag1 (Math/sqrt (reduce + (map (fn [v] (* v v)) (vals f1))))
+        mag2 (Math/sqrt (reduce + (map (fn [v] (* v v)) (vals f2))))]
+    (if (or (zero? mag1) (zero? mag2))
+      0.0
+      (/ dot-product (* mag1 mag2)))))
+
+(defn manhattan-distance
+  "Calculate the Manhattan distance (L1 norm) between word frequency vectors of two texts."
+  [text1 text2 & {:keys [stop-words] :or {stop-words default-stop-words}}]
+  (let [f1 (frequency-analysis text1 :stop-words stop-words)
+        f2 (frequency-analysis text2 :stop-words stop-words)
+        all-words (set (concat (keys f1) (keys f2)))]
+    (reduce + (map (fn [w] (Math/abs (- (get f1 w 0) (get f2 w 0)))) all-words))))
+
 (defn calculate-idf
   "Calculate Inverse Document Frequency for words across a collection of documents."
   [docs & {:keys [stop-words] :or {stop-words default-stop-words}}]

@@ -15,4 +15,7 @@ A small utility to analyze word and n-gram frequencies in text documents.
 
 (analyzer/shannon-entropy "Apple banana apple orange")
 ;; => Calculates distribution entropy
+
+(analyzer/cosine-similarity "apple apple banana" "apple banana banana")
+;; => 0.8
 ```
