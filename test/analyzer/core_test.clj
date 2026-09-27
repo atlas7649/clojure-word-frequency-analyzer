@@ -1,6 +1,6 @@
 (ns analyzer.core-test
   (:require [clojure.test :refer [deftest is testing]]
-            [analyzer.core :refer [tokenize frequency-analysis vocabulary-size generate-ngrams sorted-frequencies most-common relative-frequencies word-length-distribution average-word-length text-summary keyword-density text-readability-score text-complexity-metrics batch-frequency-analysis jaccard-similarity calculate-idf tf-idf-analysis tf-idf-top-terms clean-text lexical-diversity global-ngram-analysis normalize-text add-stop-words remove-stop-words common-words-analysis document-frequency-mapping]]))
+            [analyzer.core :refer [tokenize frequency-analysis vocabulary-size generate-ngrams sorted-frequencies most-common relative-frequencies word-length-distribution average-word-length text-summary keyword-density text-readability-score text-complexity-metrics batch-frequency-analysis jaccard-similarity calculate-idf tf-idf-analysis tf-idf-top-terms clean-text lexical-diversity global-ngram-analysis normalize-text add-stop-words remove-stop-words common-words-analysis document-frequency-mapping shannon-entropy]]))
 
 (deftest test-tokenize
   (testing "Basic tokenization"
@@ -127,12 +127,14 @@
       (let [metrics (text-complexity-metrics text)]
         (is (number? (:readability-score metrics)))
         (is (= 7 (:vocabulary-size metrics)))
-        (is (= (/ 13 3) (:average-word-length metrics))))))
+        (is (= (/ 13 3) (:average-word-length metrics)))
+        (is (number? (:entropy metrics))))))
   (testing "Complexity metrics with empty text"
     (let [metrics (text-complexity-metrics "")]
       (is (= 0.0 (:readability-score metrics)))
       (is (= 0 (:vocabulary-size metrics)))
-      (is (= 0 (:average-word-length metrics))))))
+      (is (= 0 (:average-word-length metrics)))
+      (is (= 0.0 (:entropy metrics))))))
 
 (deftest test-batch-analysis
   (testing "Analyzing multiple texts"
@@ -191,12 +193,24 @@
   (testing "Lexical diversity with empty text"
     (is (= 0.0 (lexical-diversity "")))))
 
+(deftest test-shannon-entropy
+  (testing "Entropy of uniform distribution"
+    (let [text "apple banana"
+          entropy (shannon-entropy text :stop-words #{})]
+      ;; Probabilities: 0.5, 0.5
+      ;; Entropy: 0.5*log(0.5) + 0.5*log(0.5) = log(0.5)
+      (is (= (Math/log 0.5) entropy))))
+  (testing "Entropy of single word"
+    (is (= 0.0 (shannon-entropy "apple apple apple" :stop-words #{}))))
+  (testing "Entropy of empty text"
+    (is (= 0.0 (shannon-entropy "" :stop-words #{})))))
+
 (deftest test-global-ngram-analysis
   (testing "Global n-gram frequencies"
     (let [docs {"d1" "i love clojure" "d2" "i love coding"}
           ngrams (global-ngram-analysis docs 2 :stop-words #{})]
-      (is (= 2 (get ngrams ["i" "love"])))
-      (is (= 1 (get ngrams ["love" "clojure"])))
+      (is (= 2 (get ngrams ["i" "love")))
+      (is (= 1 (get ngrams ["love" "clojure")))
       (is (= 1 (get ngrams ["love" "coding"]))))))
 
 (deftest test-common-words

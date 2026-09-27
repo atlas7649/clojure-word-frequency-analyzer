@@ -12,4 +12,7 @@ A small utility to analyze word and n-gram frequencies in text documents.
 
 (analyzer/generate-ngrams "The quick brown fox jumps over the lazy dog" 2)
 ;; => {["the" "quick"] 1, ["quick" "brown"] 1, ...}
+
+(analyzer/shannon-entropy "Apple banana apple orange")
+;; => Calculates distribution entropy
 ```

@@ -140,7 +140,8 @@
   [text & {:keys [stop-words] :or {stop-words default-stop-words}}]
   {:readability-score (text-readability-score text)
    :vocabulary-size (vocabulary-size text :stop-words stop-words)
-   :average-word-length (average-word-length text :stop-words stop-words)})
+   :average-word-length (average-word-length text :stop-words stop-words)
+   :entropy (shannon-entropy text :stop-words stop-words)})
 
 (defn batch-frequency-analysis
   "Process multiple texts and return a map of labels to frequency maps."
@@ -200,6 +201,15 @@
     (if (empty? tokens)
       0.0
       (/ (count (set tokens)) (count tokens)))))
+
+(defn shannon-entropy
+  "Calculate the Shannon entropy of the word distribution in the text."
+  [text & {:keys [stop-words] :or {stop-words default-stop-words}}]
+  (let [freqs (frequency-analysis text :stop-words stop-words)
+        probs (relative-frequencies freqs)]
+    (if (empty? probs)
+      0.0
+      (reduce + (map (fn [[_ p]] (* p (Math/log p))) (seq probs))))))
 
 (defn global-ngram-analysis
   "Calculate total frequencies of n-grams across multiple documents."
