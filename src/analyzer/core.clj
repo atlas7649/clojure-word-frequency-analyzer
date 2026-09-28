@@ -254,3 +254,19 @@
   [batch-freqs]
   (let [all-words (mapcat keys (vals batch-freqs))]
     (frequencies all-words)))
+
+(defn zipfs-law-analysis
+  "Analyze if the word distribution follows Zipf's Law.
+   Returns a sequence of [rank frequency predicted-frequency] for the top N words."
+  [text n & {:keys [stop-words] :or {stop-words default-stop-words}}]
+  (let [freqs (frequency-analysis text :stop-words stop-words)
+        sorted (sorted-frequencies freqs)
+        total-tokens (reduce + (vals freqs))
+        most-freq-count (if (empty? sorted) 0 (second (first sorted)))]
+    (if (or (empty? sorted) (zero? total-tokens))
+      []
+      (map-indexed (fn [idx [word count]]
+                      (let [rank (inc idx)
+                            predicted (/ most-freq-count rank)]
+                        [rank count predicted]))
+                    (take n sorted)))))

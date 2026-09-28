@@ -1,6 +1,6 @@
 (ns analyzer.core-test
   (:require [clojure.test :refer [deftest is testing]]
-            [analyzer.core :refer [tokenize frequency-analysis vocabulary-size generate-ngrams sorted-frequencies most-common relative-frequencies word-length-distribution average-word-length text-summary keyword-density text-readability-score text-complexity-metrics batch-frequency-analysis jaccard-similarity cosine-similarity manhattan-distance calculate-idf tf-idf-analysis tf-idf-top-terms clean-text lexical-diversity global-ngram-analysis normalize-text add-stop-words remove-stop-words common-words-analysis document-frequency-mapping shannon-entropy]]))
+            [analyzer.core :refer [tokenize frequency-analysis vocabulary-size generate-ngrams sorted-frequencies most-common relative-frequencies word-length-distribution average-word-length text-summary keyword-density text-readability-score text-complexity-metrics batch-frequency-analysis jaccard-similarity cosine-similarity manhattan-distance calculate-idf tf-idf-analysis tf-idf-top-terms clean-text lexical-diversity global-ngram-analysis normalize-text add-stop-words remove-stop-words common-words-analysis document-frequency-mapping shannon-entropy zipfs-law-analysis]]))
 
 (deftest test-tokenize
   (testing "Basic tokenization"
@@ -178,7 +178,7 @@
       ;; d1 TF: apple=2/3, banana=1/3
       ;; d2 TF: apple=1/2, cherry=1/2
       ;; IDF: apple=log(2/2)=0, banana=log(2/1)=log 2, cherry=log(2/1)=log 2
-      (is (= 0.0 (get-in tfidf ["d1" "apple"])))
+      (is (= 0.0 (get-in tfidf ["d1" "apple")))
       (is (= (* (/ 1 3) (Math/log 2)) (get-in tfidf ["d1" "banana")))
       (is (= (* (/ 1 2) (Math/log 2)) (get-in tfidf ["d2" "cherry"])))))
   (testing "TF-IDF Top Terms"
@@ -233,3 +233,16 @@
   (testing "Calculating document frequency"
     (let [batch-freqs {"d1" {"apple" 1 "banana" 1} "d2" {"banana" 1 "cherry" 1}}]
       (is (= {"apple" 1 "banana" 2 "cherry" 1} (document-frequency-mapping batch-freqs))))))
+
+(deftest test-zipfs-law
+  (testing "Zipf's law distribution"
+    (let [text "apple apple apple banana banana cherry"
+          analysis (zipfs-law-analysis text 3 :stop-words #{})]
+      ;; Rank 1: apple (3), predicted: 3/1 = 3
+      ;; Rank 2: banana (2), predicted: 3/2 = 1.5
+      ;; Rank 3: cherry (1), predicted: 3/3 = 1
+      (is (= [1 3 3.0] (first analysis)))
+      (is (= [2 2 1.5] (second analysis)))
+      (is (= [3 1 1.0] (third analysis)))))
+  (testing "Zipf's law with empty text"
+    (is (= [] (zipfs-law-analysis "" 3 :stop-words #{}))))))
