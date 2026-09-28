@@ -18,4 +18,7 @@ A small utility to analyze word and n-gram frequencies in text documents.
 
 (analyzer/cosine-similarity "apple apple banana" "apple banana banana")
 ;; => 0.8
+
+(analyzer/gunning-fog-index "The quick brown fox jumps over the lazy dog.")
+;; => Calculates a standard readability index
 ```

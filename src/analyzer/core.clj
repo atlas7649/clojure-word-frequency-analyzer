@@ -135,10 +135,27 @@
       0.0
       (+ (* 0.4 avg-sentence-length) (* 0.6 avg-word-length)))))
 
+(defn gunning-fog-index
+  "Calculate the Gunning Fog Index for a text.
+   Formula: 0.4 * ((average sentence length) + (percentage of complex words))
+   Complex words are defined as words with 3 or more syllables (approximated here by length > 6)."
+  [text]
+  (let [sentences (str/split text #[\\.!] )]
+       sentence-count (count (remove str/blank? sentences))
+       words (tokenize text)
+       word-count (count words)
+       complex-words (count (filter #(> (count %) 6) words))
+       avg-sentence-length (if (zero? sentence-count) 0 (/ word-count sentence-count))
+       pct-complex (if (zero? word-count) 0 (* 100 (/ complex-words word-count)))]
+    (if (or (zero? sentence-count) (zero? word-count))
+      0.0
+      (* 0.4 (+ avg-sentence-length pct-complex)))))
+
 (defn text-complexity-metrics
   "Aggregate various complexity metrics for the given text."
   [text & {:keys [stop-words] :or {stop-words default-stop-words}}]
   {:readability-score (text-readability-score text)
+   :gunning-fog-index (gunning-fog-index text)
    :vocabulary-size (vocabulary-size text :stop-words stop-words)
    :average-word-length (average-word-length text :stop-words stop-words)
    :entropy (shannon-entropy text :stop-words stop-words)})

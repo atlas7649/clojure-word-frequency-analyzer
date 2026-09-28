@@ -1,6 +1,6 @@
 (ns analyzer.core-test
   (:require [clojure.test :refer [deftest is testing]]
-            [analyzer.core :refer [tokenize frequency-analysis vocabulary-size generate-ngrams sorted-frequencies most-common relative-frequencies word-length-distribution average-word-length text-summary keyword-density text-readability-score text-complexity-metrics batch-frequency-analysis jaccard-similarity cosine-similarity manhattan-distance calculate-idf tf-idf-analysis tf-idf-top-terms clean-text lexical-diversity global-ngram-analysis normalize-text add-stop-words remove-stop-words common-words-analysis document-frequency-mapping shannon-entropy zipfs-law-analysis]]))
+            [analyzer.core :refer [tokenize frequency-analysis vocabulary-size generate-ngrams sorted-frequencies most-common relative-frequencies word-length-distribution average-word-length text-summary keyword-density text-readability-score text-complexity-metrics batch-frequency-analysis jaccard-similarity cosine-similarity manhattan-distance calculate-idf tf-idf-analysis tf-idf-top-terms clean-text lexical-diversity global-ngram-analysis normalize-text add-stop-words remove-stop-words common-words-analysis document-frequency-mapping shannon-entropy zipfs-law-analysis gunning-fog-index]]))
 
 (deftest test-tokenize
   (testing "Basic tokenization"
@@ -121,20 +121,37 @@
   (testing "Readability score with empty text"
     (is (= 0.0 (text-readability-score "")))))
 
+(deftest test-gunning-fog-index
+  (testing "Gunning Fog Index calculation"
+    (let [text "The quick brown fox jumps over the lazy dog. This is a sophisticated demonstration."]
+      ;; Sentence 1: 9 words
+      ;; Sentence 2: 5 words
+      ;; Total words: 14
+      ;; Total sentences: 2
+      ;; Avg sentence length: 14 / 2 = 7.0
+      ;; Complex words (>6 chars): [sophisticated, demonstration] (2 words)
+      ;; Pct complex: (2/14)*100 ≈ 14.28%
+      ;; Score: 0.4 * (7.0 + 14.28) = 0.4 * 21.28 ≈ 8.51
+      (is (> (gunning-fog-index text) 8.0))))
+  (testing "Gunning Fog Index with empty text"
+    (is (= 0.0 (gunning-fog-index "")))))
+
 (deftest test-text-complexity-metrics
   (testing "Complexity metrics aggregation"
     (let [text "The quick brown fox jumps over the lazy dog."]
       (let [metrics (text-complexity-metrics text)]
         (is (number? (:readability-score metrics)))
+        (is (number? (:gunning-fog-index metrics)))
         (is (= 7 (:vocabulary-size metrics)))
         (is (= (/ 13 3) (:average-word-length metrics)))
         (is (number? (:entropy metrics))))))
   (testing "Complexity metrics with empty text"
     (let [metrics (text-complexity-metrics "")]
       (is (= 0.0 (:readability-score metrics)))
+      (is (= 0.0 (:gunning-fog-index metrics)))
       (is (= 0 (:vocabulary-size metrics)))
       (is (= 0 (:average-word-length metrics)))
-      (is (= 0.0 (:entropy metrics))))))
+      (is (= 0.0 (:entropy metrics)))))))
 
 (deftest test-batch-analysis
   (testing "Analyzing multiple texts"
