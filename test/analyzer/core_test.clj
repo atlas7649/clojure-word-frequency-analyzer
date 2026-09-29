@@ -1,6 +1,6 @@
 (ns analyzer.core-test
   (:require [clojure.test :refer [deftest is testing]]
-            [analyzer.core :refer [tokenize frequency-analysis vocabulary-size generate-ngrams sorted-frequencies most-common relative-frequencies word-length-distribution average-word-length text-summary keyword-density text-readability-score text-complexity-metrics batch-frequency-analysis jaccard-similarity cosine-similarity manhattan-distance calculate-idf tf-idf-analysis tf-idf-top-terms clean-text lexical-diversity global-ngram-analysis normalize-text add-stop-words remove-stop-words common-words-analysis document-frequency-mapping shannon-entropy zipfs-law-analysis gunning-fog-index]]))
+            [analyzer.core :refer [tokenize frequency-analysis vocabulary-size generate-ngrams sorted-frequencies most-common relative-frequencies word-length-distribution average-word-length text-summary keyword-density text-readability-score text-complexity-metrics batch-frequency-analysis jaccard-similarity cosine-similarity manhattan-distance calculate-idf tf-idf-analysis tf-idf-top-terms clean-text lexical-diversity global-ngram-analysis normalize-text add-stop-words remove-stop-words common-words-analysis document-frequency-mapping shannon-entropy zipfs-law-analysis gunning-fog-index word-cloud-data text-to-freq-map]]))
 
 (deftest test-tokenize
   (testing "Basic tokenization"
@@ -262,4 +262,16 @@
       (is (= [2 2 1.5] (second analysis)))
       (is (= [3 1 1.0] (third analysis)))))
   (testing "Zipf's law with empty text"
-    (is (= [] (zipfs-law-analysis "" 3 :stop-words #{}))))))
+    (is (= [] (zipfs-law-analysis "" 3 :stop-words #{})))))
+
+(deftest test-word-cloud-data
+  (testing "Generating word cloud data"
+    (let [text "apple banana apple orange apple banana"
+          data (word-cloud-data text 2 :stop-words #{})]
+      (is (= [{:text "apple" :value 3} {:text "banana" :value 2}] data)))))
+
+(deftest test-text-to-freq-map
+  (testing "Direct text to frequency map conversion"
+    (let [text "apple banana apple"
+          freqs (text-to-freq-map text #{})]
+      (is (= {"apple" 2 "banana" 1} freqs))))))

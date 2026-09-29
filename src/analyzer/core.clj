@@ -287,3 +287,15 @@
                             predicted (/ most-freq-count rank)]
                         [rank count predicted]))
                     (take n sorted)))))
+
+(defn word-cloud-data
+  "Generate data structured for word cloud visualization: a sequence of {text, value} maps."
+  [text n & {:keys [stop-words] :or {stop-words default-stop-words}}]
+  (let [freqs (frequency-analysis text :stop-words stop-words)]
+    (->> (most-common freqs n)
+         (map (fn [[word count]] {:text word :value count})))))
+
+(defn text-to-freq-map
+  "Helper to convert a text block directly to a frequency map with specified stop words."
+  [text stop-words]
+  (frequency-analysis text :stop-words stop-words))
