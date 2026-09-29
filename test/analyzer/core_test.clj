@@ -1,6 +1,6 @@
 (ns analyzer.core-test
   (:require [clojure.test :refer [deftest is testing]]
-            [analyzer.core :refer [tokenize frequency-analysis vocabulary-size generate-ngrams sorted-frequencies most-common relative-frequencies word-length-distribution average-word-length text-summary keyword-density text-readability-score text-complexity-metrics batch-frequency-analysis jaccard-similarity cosine-similarity manhattan-distance calculate-idf tf-idf-analysis tf-idf-top-terms clean-text lexical-diversity global-ngram-analysis normalize-text add-stop-words remove-stop-words common-words-analysis document-frequency-mapping shannon-entropy zipfs-law-analysis gunning-fog-index word-cloud-data text-to-freq-map cluster-documents]]))
+            [analyzer.core :refer [tokenize frequency-analysis vocabulary-size generate-ngrams sorted-frequencies most-common relative-frequencies word-length-distribution average-word-length text-summary keyword-density text-readability-score text-complexity-metrics batch-frequency-analysis jaccard-similarity cosine-similarity manhattan-distance calculate-idf tf-idf-analysis tf-idf-top-terms clean-text lexical-diversity global-ngram-analysis normalize-text add-stop-words remove-stop-words common-words-analysis document-frequency-mapping shannon-entropy zipfs-law-analysis gunning-fog-index word-cloud-data text-to-freq-map cluster-documents kullback-leibler-divergence]]))
 
 (deftest test-tokenize
   (testing "Basic tokenization"
@@ -178,6 +178,25 @@
       ;; f1: {apple 2, banana 1}, f2: {apple 1, banana 2}
       ;; dist: |2-1| + |1-2| = 1 + 1 = 2
       (is (= 2 (manhattan-distance t1 t2 :stop-words #{}))))))
+
+(deftest test-kl-divergence
+  (testing "KL Divergence identical distributions"
+    (let [t1 "apple banana"
+          t2 "apple banana"]
+      (is (= 0.0 (kullback-leibler-divergence t1 t2 :stop-words #{})))))
+  (testing "KL Divergence different distributions"
+    (let [t1 "apple apple banana"
+          t2 "apple banana banana"]
+      ;; P: {apple 2/3, banana 1/3}, Q: {apple 1/3, banana 2/3}
+      ;; KL = (2/3 * log( (2/3)/(1/3) )) + (1/3 * log( (1/3)/(2/3) ))
+      ;; KL = (2/3 * log 2) + (1/3 * log 0.5) = (2/3 * log 2) - (1/3 * log 2) = (1/3 * log 2)
+      (is (= (/ (Math/log 2) 3) (kullback-leibler-divergence t1 t2 :stop-words #{})))))
+  (testing "KL Divergence with disjoint sets"
+    (let [t1 "apple"
+          t2 "banana"]
+      ;; P: {apple 1.0}, Q: {banana 1.0}
+      ;; KL = 1.0 * log(1.0 / epsilon)
+      (is (> (kullback-leibler-divergence t1 t2 :stop-words #{}) 10.0))))))
 
 (deftest test-tfidf
   (testing "IDF calculation"

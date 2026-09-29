@@ -21,4 +21,7 @@ A small utility to analyze word and n-gram frequencies in text documents.
 
 (analyzer/gunning-fog-index "The quick brown fox jumps over the lazy dog.")
 ;; => Calculates a standard readability index
+
+(analyzer/kullback-leibler-divergence "apple apple banana" "apple banana banana")
+;; => Calculates information divergence between distributions
 ```

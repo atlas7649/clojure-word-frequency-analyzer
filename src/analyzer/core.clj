@@ -195,6 +195,23 @@
         all-words (set (concat (keys f1) (keys f2)))]
     (reduce + (map (fn [w] (Math/abs (- (get f1 w 0) (get f2 w 0)))) all-words))))
 
+(defn kullback-leibler-divergence
+  "Calculate the KL Divergence between the word distributions of two texts.
+   D_KL(P || Q) = sum(P(i) * log(P(i) / Q(i)))
+   A small epsilon is added to Q to avoid division by zero."
+  [text1 text2 & {:keys [stop-words] :or {stop-words default-stop-words}}]
+  (let [p (relative-frequencies (frequency-analysis text1 :stop-words stop-words))
+        q (relative-frequencies (frequency-analysis text2 :stop-words stop-words))
+        epsilon 1e-10
+        all-words (keys p)]
+    (if (empty? p)
+      0.0
+      (reduce + (map (fn [w]
+                       (let [p-val (get p w)
+                             q-val (max epsilon (get q w 0))]
+                         (* p-val (Math/log (/ p-val q-val)))))
+                     all-words)))))
+
 (defn calculate-idf
   "Calculate Inverse Document Frequency for words across a collection of documents."
   [docs & {:keys [stop-words] :or {stop-words default-stop-words}}]
