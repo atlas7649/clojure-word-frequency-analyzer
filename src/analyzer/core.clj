@@ -299,3 +299,24 @@
   "Helper to convert a text block directly to a frequency map with specified stop words."
   [text stop-words]
   (frequency-analysis text :stop-words stop-words))
+
+(defn cluster-documents
+  "Group documents into clusters based on a minimum cosine similarity threshold.
+   Returns a vector of clusters, where each cluster is a vector of document labels."
+  [docs-map threshold & {:keys [stop-words] :or {stop-words default-stop-words}}]
+  (let [labels (vec (keys docs-map))]
+    (loop [remaining labels
+           clusters []]
+      (if (empty? remaining)
+        clusters
+        (let [current (first remaining)
+              others (rest remaining)
+              cluster (cons current
+                           (reduce (fn [acc other]
+                                       (if (>= (cosine-similarity (get docs-map current) (get docs-map other) :stop-words stop-words) threshold)
+                                         (conj acc other)
+                                         acc))
+                                     []
+                                     others))
+              new-remaining (remove #(contains? (set cluster) %) others)]
+          (recur new-remaining (conj clusters cluster))))))))

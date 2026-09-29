@@ -1,6 +1,6 @@
 (ns analyzer.core-test
   (:require [clojure.test :refer [deftest is testing]]
-            [analyzer.core :refer [tokenize frequency-analysis vocabulary-size generate-ngrams sorted-frequencies most-common relative-frequencies word-length-distribution average-word-length text-summary keyword-density text-readability-score text-complexity-metrics batch-frequency-analysis jaccard-similarity cosine-similarity manhattan-distance calculate-idf tf-idf-analysis tf-idf-top-terms clean-text lexical-diversity global-ngram-analysis normalize-text add-stop-words remove-stop-words common-words-analysis document-frequency-mapping shannon-entropy zipfs-law-analysis gunning-fog-index word-cloud-data text-to-freq-map]]))
+            [analyzer.core :refer [tokenize frequency-analysis vocabulary-size generate-ngrams sorted-frequencies most-common relative-frequencies word-length-distribution average-word-length text-summary keyword-density text-readability-score text-complexity-metrics batch-frequency-analysis jaccard-similarity cosine-similarity manhattan-distance calculate-idf tf-idf-analysis tf-idf-top-terms clean-text lexical-diversity global-ngram-analysis normalize-text add-stop-words remove-stop-words common-words-analysis document-frequency-mapping shannon-entropy zipfs-law-analysis gunning-fog-index word-cloud-data text-to-freq-map cluster-documents]]))
 
 (deftest test-tokenize
   (testing "Basic tokenization"
@@ -274,4 +274,12 @@
   (testing "Direct text to frequency map conversion"
     (let [text "apple banana apple"
           freqs (text-to-freq-map text #{})]
-      (is (= {"apple" 2 "banana" 1} freqs))))))
+      (is (= {"apple" 2 "banana" 1} freqs)))))
+
+(deftest test-cluster-documents
+  (testing "Basic clustering"
+    (let [docs {"d1" "apple apple banana" "d2" "apple banana banana" "d3" "cherry date"}]
+      (let [clusters (cluster-documents docs 0.5 :stop-words #{})]
+        (is (= 2 (count clusters)))
+        (is (some (fn [c] (and (contains? (set c) "d1") (contains? (set c) "d2"))) clusters))
+        (is (some (fn [c] (contains? (set c) "d3")) clusters))))))
