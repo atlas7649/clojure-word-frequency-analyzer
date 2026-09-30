@@ -1,6 +1,6 @@
 (ns analyzer.core-test
   (:require [clojure.test :refer [deftest is testing]]
-            [analyzer.core :refer [tokenize frequency-analysis vocabulary-size generate-ngrams sorted-frequencies most-common relative-frequencies word-length-distribution average-word-length text-summary keyword-density text-readability-score text-complexity-metrics batch-frequency-analysis jaccard-similarity cosine-similarity manhattan-distance euclidean-distance hamming-distance text-similarity-report calculate-idf tf-idf-analysis tf-idf-top-terms clean-text lexical-diversity global-ngram-analysis normalize-text add-stop-words remove-stop-words common-words-analysis document-frequency-mapping shannon-entropy zipfs-law-analysis gunning-fog-index word-cloud-data text-to-freq-map cluster-documents kullback-leibler-divergence herdan-vocabulary dominant-ngram]]))
+            [analyzer.core :refer [tokenize frequency-analysis vocabulary-size generate-ngrams sorted-frequencies most-common relative-frequencies word-length-distribution average-word-length text-summary keyword-density text-readability-score text-complexity-metrics batch-frequency-analysis jaccard-similarity cosine-similarity manhattan-distance euclidean-distance hamming-distance text-similarity-report calculate-idf tf-idf-analysis tf-idf-top-terms clean-text lexical-diversity global-ngram-analysis normalize-text add-stop-words remove-stop-words common-words-analysis document-frequency-mapping shannon-entropy zipfs-law-analysis gunning-fog-index word-cloud-data text-to-freq-map cluster-documents kullback-leibler-divergence herdan-vocabulary dominant-ngram canberra-distance bray-curtis-dissimilarity]]))
 
 (deftest test-tokenize
   (testing "Basic tokenization"
@@ -196,10 +196,28 @@
       ;; union: {apple banana cherry}
       ;; diffs: banana(T,F), cherry(F,T) -> 2
       (is (= 2 (hamming-distance t1 t2 :stop-words #{})))))
+  (testing "Canberra distance"
+    (let [t1 "apple apple banana"
+          t2 "apple banana banana"]
+      ;; f1: {apple 2, banana 1}, f2: {apple 1, banana 2}
+      ;; apple: |2-1| / (2+1) = 1/3
+      ;; banana: |1-2| / (1+2) = 1/3
+      ;; dist: 1/3 + 1/3 = 2/3
+      (is (= (/ 2 3) (canberra-distance t1 t2 :stop-words #{})))))
+  (testing "Bray-Curtis dissimilarity"
+    (let [t1 "apple apple banana"
+          t2 "apple banana banana"]
+      ;; f1: {apple 2, banana 1}, f2: {apple 1, banana 2}
+      ;; sum-diff: |2-1| + |1-2| = 2
+      ;; sum-total: (2+1) + (1+2) = 6
+      ;; dist: 2/6 = 1/3
+      (is (= (/ 1 3) (bray-curtis-dissimilarity t1 t2 :stop-words #{})))))
   (testing "Similarity report"
     (let [report (text-similarity-report "apple banana" "apple cherry" :stop-words #{})]
       (is (contains? report :cosine))
-      (is (contains? report :euclidean)))))
+      (is (contains? report :euclidean))
+      (is (contains? report :canberra))
+      (is (contains? report :bray-curtis))))))
 
 (deftest test-kl-divergence
   (testing "KL Divergence identical distributions"

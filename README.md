@@ -26,7 +26,7 @@ A small utility to analyze word and n-gram frequencies in text documents.
 ;; => Calculates information divergence between distributions
 
 (analyzer/text-similarity-report "apple banana" "apple cherry")
-;; => {:jaccard 0.33, :cosine 0.5, :manhattan 2, :euclidean 1.41, :hamming 2}
+;; => {:jaccard 0.33, :cosine 0.5, :manhattan 2, :euclidean 1.41, :hamming 2, :canberra 1.0, :bray-curtis 0.5}
 
 (analyzer/dominant-ngram "apple banana apple banana cherry" 2)
 ;; => [["apple" "banana"] 2]

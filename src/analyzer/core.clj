@@ -217,6 +217,32 @@
         all-words (clojure.set/union set1 set2)]
     (count (filter (fn [w] (not= (contains? set1 w) (contains? set2 w))) all-words))))
 
+(defn canberra-distance
+  "Calculate Canberra distance between word frequency vectors of two texts.
+   d = sum(|pi - qi| / (|pi| + |qi|))
+   Handles zero denominators by treating the term as 0."
+  [text1 text2 & {:keys [stop-words] :or {stop-words default-stop-words}}]
+  (let [f1 (frequency-analysis text1 :stop-words stop-words)
+        f2 (frequency-analysis text2 :stop-words stop-words)
+        all-words (set (concat (keys f1) (keys f2)))]
+    (reduce + (map (fn [w]
+                      (let [v1 (get f1 w 0)
+                            v2 (get f2 w 0)
+                            denom (+ (Math/abs v1) (Math/abs v2))]
+                        (if (zero? denom) 0.0 (/ (Math/abs (- v1 v2)) denom))))
+                    all-words))))
+
+(defn bray-curtis-dissimilarity
+  "Calculate Bray-Curtis dissimilarity between word frequency vectors of two texts.
+   d = sum(|pi - qi|) / sum(|pi + qi|)"
+  [text1 text2 & {:keys [stop-words] :or {stop-words default-stop-words}}]
+  (let [f1 (frequency-analysis text1 :stop-words stop-words)
+        f2 (frequency-analysis text2 :stop-words stop-words)
+        all-words (set (concat (keys f1) (keys f2)))
+        sum-diff (reduce + (map (fn [w] (Math/abs (- (get f1 w 0) (get f2 w 0)))) all-words))
+        sum-total (reduce + (map (fn [w] (+ (get f1 w 0) (get f2 w 0))) all-words))]
+    (if (zero? sum-total) 0.0 (/ sum-diff sum-total))))
+
 (defn text-similarity-report
   "Return a map containing multiple similarity and distance metrics between two texts."
   [text1 text2 & {:keys [stop-words] :or {stop-words default-stop-words}}]
@@ -224,7 +250,9 @@
    :cosine (cosine-similarity text1 text2 :stop-words stop-words)
    :manhattan (manhattan-distance text1 text2 :stop-words stop-words)
    :euclidean (euclidean-distance text1 text2 :stop-words stop-words)
-   :hamming (hamming-distance text1 text2 :stop-words stop-words)})
+   :hamming (hamming-distance text1 text2 :stop-words stop-words)
+   :canberra (canberra-distance text1 text2 :stop-words stop-words)
+   :bray-curtis (bray-curtis-dissimilarity text1 text2 :stop-words stop-words)}))
 
 (defn kullback-leibler-divergence
   "Calculate the KL Divergence between the word distributions of two texts.
