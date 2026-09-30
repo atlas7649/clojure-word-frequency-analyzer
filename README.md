@@ -27,4 +27,10 @@ A small utility to analyze word and n-gram frequencies in text documents.
 
 (analyzer/text-similarity-report "apple banana" "apple cherry")
 ;; => {:jaccard 0.33, :cosine 0.5, :manhattan 2, :euclidean 1.41, :hamming 2}
+
+(analyzer/dominant-ngram "apple banana apple banana cherry" 2)
+;; => [["apple" "banana"] 2]
+
+(analyzer/herdan-vocabulary "apple banana apple banana cherry date" 3)
+;; => [0.66, 0.66, 1.0, 1.0]
 ```

@@ -77,6 +77,12 @@
          (partition n 1)
          (frequencies))))
 
+(defn dominant-ngram
+  "Find the most frequent n-gram of size n in the text."
+  [text n & {:keys [stop-words] :or {stop-words nil}}]
+  (let [ngrams (generate-ngrams text n :stop-words stop-words)]
+    (first (sorted-frequencies ngrams))))
+
 (defn word-length-distribution
   "Calculate the frequency of word lengths in the text, optionally filtering stop words."
   [text & {:keys [stop-words] :or {stop-words default-stop-words}}]
@@ -281,6 +287,18 @@
     (if (empty? tokens)
       0.0
       (/ (count (set tokens)) (count tokens)))))
+
+(defn herdan-vocabulary
+  "Calculate Herdan's Vocabulary (TTR over a sequence of token windows).
+   Returns a sequence of TTR values for windows of size window-size."
+  [text window-size & {:keys [stop-words] :or {stop-words default-stop-words}}]
+  (let [tokens (->> (tokenize text) (remove #(contains? stop-words %)))]
+    (->> tokens
+         (partition window-size 1)
+         (map (fn [window]
+                 (if (empty? window)
+                   0.0
+                   (/ (count (set window)) (count window))))))))
 
 (defn shannon-entropy
   "Calculate the Shannon entropy of the word distribution in the text."

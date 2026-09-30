@@ -1,6 +1,6 @@
 (ns analyzer.core-test
   (:require [clojure.test :refer [deftest is testing]]
-            [analyzer.core :refer [tokenize frequency-analysis vocabulary-size generate-ngrams sorted-frequencies most-common relative-frequencies word-length-distribution average-word-length text-summary keyword-density text-readability-score text-complexity-metrics batch-frequency-analysis jaccard-similarity cosine-similarity manhattan-distance euclidean-distance hamming-distance text-similarity-report calculate-idf tf-idf-analysis tf-idf-top-terms clean-text lexical-diversity global-ngram-analysis normalize-text add-stop-words remove-stop-words common-words-analysis document-frequency-mapping shannon-entropy zipfs-law-analysis gunning-fog-index word-cloud-data text-to-freq-map cluster-documents kullback-leibler-divergence]]))
+            [analyzer.core :refer [tokenize frequency-analysis vocabulary-size generate-ngrams sorted-frequencies most-common relative-frequencies word-length-distribution average-word-length text-summary keyword-density text-readability-score text-complexity-metrics batch-frequency-analysis jaccard-similarity cosine-similarity manhattan-distance euclidean-distance hamming-distance text-similarity-report calculate-idf tf-idf-analysis tf-idf-top-terms clean-text lexical-diversity global-ngram-analysis normalize-text add-stop-words remove-stop-words common-words-analysis document-frequency-mapping shannon-entropy zipfs-law-analysis gunning-fog-index word-cloud-data text-to-freq-map cluster-documents kullback-leibler-divergence herdan-vocabulary dominant-ngram]]))
 
 (deftest test-tokenize
   (testing "Basic tokenization"
@@ -69,6 +69,11 @@
           stop-words #{"the" "over"}]
       (is (= 1 ((generate-ngrams text 2 :stop-words stop-words) ["quick" "brown")))
       (is (nil? ((generate-ngrams text 2 :stop-words stop-words) ["the" "quick"]))))))
+
+(deftest test-dominant-ngram
+  (testing "Finding most frequent n-gram"
+    (let [text "apple banana apple banana cherry"]
+      (is (= [["apple" "banana"] 2] (dominant-ngram text 2 :stop-words #{}))))))
 
 (deftest test-word-length-distribution
   (testing "Length distribution with default stop-words"
@@ -251,6 +256,15 @@
       (is (= 0.75 (lexical-diversity text :stop-words #{})))))
   (testing "Lexical diversity with empty text"
     (is (= 0.0 (lexical-diversity "")))))
+
+(deftest test-herdan-vocabulary
+  (testing "Herdan Vocabulary calculation"
+    (let [text "apple banana apple banana cherry date"
+          ttr (herdan-vocabulary text 3 :stop-words #{})]
+      ;; Windows: [apple banana apple] -> 2/3, [banana apple banana] -> 2/3, [apple banana cherry] -> 3/3, [banana cherry date] -> 3/3
+      (is (= [2/3 2/3 1.0 1.0] ttr)))))
+  (testing "Herdan Vocabulary empty text"
+    (is (= [] (herdan-vocabulary "" 3 :stop-words #{})))))
 
 (deftest test-shannon-entropy
   (testing "Entropy of uniform distribution"
