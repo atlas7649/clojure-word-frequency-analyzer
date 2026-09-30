@@ -195,6 +195,31 @@
         all-words (set (concat (keys f1) (keys f2)))]
     (reduce + (map (fn [w] (Math/abs (- (get f1 w 0) (get f2 w 0)))) all-words))))
 
+(defn euclidean-distance
+  "Calculate the Euclidean distance (L2 norm) between word frequency vectors of two texts."
+  [text1 text2 & {:keys [stop-words] :or {stop-words default-stop-words}}]
+  (let [f1 (frequency-analysis text1 :stop-words stop-words)
+        f2 (frequency-analysis text2 :stop-words stop-words)
+        all-words (set (concat (keys f1) (keys f2)))]
+    (Math/sqrt (reduce + (map (fn [w] (let [diff (- (get f1 w 0) (get f2 w 0))] (* diff diff))) all-words))))
+
+(defn hamming-distance
+  "Calculate the Hamming distance between two texts based on the set of words present (binary vector)."
+  [text1 text2 & {:keys [stop-words] :or {stop-words default-stop-words}}]
+  (let [set1 (set (->> (tokenize text1) (remove #(contains? stop-words %))))
+        set2 (set (->> (tokenize text2) (remove #(contains? stop-words %))))
+        all-words (clojure.set/union set1 set2)]
+    (count (filter (fn [w] (not= (contains? set1 w) (contains? set2 w))) all-words))))
+
+(defn text-similarity-report
+  "Return a map containing multiple similarity and distance metrics between two texts."
+  [text1 text2 & {:keys [stop-words] :or {stop-words default-stop-words}}]
+  {:jaccard (jaccard-similarity text1 text2 :stop-words stop-words)
+   :cosine (cosine-similarity text1 text2 :stop-words stop-words)
+   :manhattan (manhattan-distance text1 text2 :stop-words stop-words)
+   :euclidean (euclidean-distance text1 text2 :stop-words stop-words)
+   :hamming (hamming-distance text1 text2 :stop-words stop-words)})
+
 (defn kullback-leibler-divergence
   "Calculate the KL Divergence between the word distributions of two texts.
    D_KL(P || Q) = sum(P(i) * log(P(i) / Q(i)))
@@ -210,7 +235,7 @@
                        (let [p-val (get p w)
                              q-val (max epsilon (get q w 0))]
                          (* p-val (Math/log (/ p-val q-val)))))
-                     all-words)))))
+                     all-words))))))
 
 (defn calculate-idf
   "Calculate Inverse Document Frequency for words across a collection of documents."

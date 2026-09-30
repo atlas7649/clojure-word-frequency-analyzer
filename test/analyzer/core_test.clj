@@ -1,6 +1,6 @@
 (ns analyzer.core-test
   (:require [clojure.test :refer [deftest is testing]]
-            [analyzer.core :refer [tokenize frequency-analysis vocabulary-size generate-ngrams sorted-frequencies most-common relative-frequencies word-length-distribution average-word-length text-summary keyword-density text-readability-score text-complexity-metrics batch-frequency-analysis jaccard-similarity cosine-similarity manhattan-distance calculate-idf tf-idf-analysis tf-idf-top-terms clean-text lexical-diversity global-ngram-analysis normalize-text add-stop-words remove-stop-words common-words-analysis document-frequency-mapping shannon-entropy zipfs-law-analysis gunning-fog-index word-cloud-data text-to-freq-map cluster-documents kullback-leibler-divergence]]))
+            [analyzer.core :refer [tokenize frequency-analysis vocabulary-size generate-ngrams sorted-frequencies most-common relative-frequencies word-length-distribution average-word-length text-summary keyword-density text-readability-score text-complexity-metrics batch-frequency-analysis jaccard-similarity cosine-similarity manhattan-distance euclidean-distance hamming-distance text-similarity-report calculate-idf tf-idf-analysis tf-idf-top-terms clean-text lexical-diversity global-ngram-analysis normalize-text add-stop-words remove-stop-words common-words-analysis document-frequency-mapping shannon-entropy zipfs-law-analysis gunning-fog-index word-cloud-data text-to-freq-map cluster-documents kullback-leibler-divergence]]))
 
 (deftest test-tokenize
   (testing "Basic tokenization"
@@ -67,7 +67,7 @@
   (testing "N-gram generation with stop-words"
     (let [text "The quick brown fox jumps over the lazy dog"
           stop-words #{"the" "over"}]
-      (is (= 1 ((generate-ngrams text 2 :stop-words stop-words) ["quick" "brown"])))
+      (is (= 1 ((generate-ngrams text 2 :stop-words stop-words) ["quick" "brown")))
       (is (nil? ((generate-ngrams text 2 :stop-words stop-words) ["the" "quick"]))))))
 
 (deftest test-word-length-distribution
@@ -177,7 +177,24 @@
           t2 "apple banana banana"]
       ;; f1: {apple 2, banana 1}, f2: {apple 1, banana 2}
       ;; dist: |2-1| + |1-2| = 1 + 1 = 2
-      (is (= 2 (manhattan-distance t1 t2 :stop-words #{}))))))
+      (is (= 2 (manhattan-distance t1 t2 :stop-words #{})))))
+  (testing "Euclidean distance"
+    (let [t1 "apple apple banana"
+          t2 "apple banana banana"]
+      ;; f1: {apple 2, banana 1}, f2: {apple 1, banana 2}
+      ;; dist: sqrt((2-1)^2 + (1-2)^2) = sqrt(1 + 1) = sqrt(2)
+      (is (= (Math/sqrt 2) (euclidean-distance t1 t2 :stop-words #{})))))
+  (testing "Hamming distance"
+    (let [t1 "apple banana"
+          t2 "apple cherry"]
+      ;; sets: {apple banana} {apple cherry}
+      ;; union: {apple banana cherry}
+      ;; diffs: banana(T,F), cherry(F,T) -> 2
+      (is (= 2 (hamming-distance t1 t2 :stop-words #{})))))
+  (testing "Similarity report"
+    (let [report (text-similarity-report "apple banana" "apple cherry" :stop-words #{})]
+      (is (contains? report :cosine))
+      (is (contains? report :euclidean)))))
 
 (deftest test-kl-divergence
   (testing "KL Divergence identical distributions"

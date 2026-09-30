@@ -24,4 +24,7 @@ A small utility to analyze word and n-gram frequencies in text documents.
 
 (analyzer/kullback-leibler-divergence "apple apple banana" "apple banana banana")
 ;; => Calculates information divergence between distributions
+
+(analyzer/text-similarity-report "apple banana" "apple cherry")
+;; => {:jaccard 0.33, :cosine 0.5, :manhattan 2, :euclidean 1.41, :hamming 2}
 ```
