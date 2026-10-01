@@ -33,4 +33,7 @@ A small utility to analyze word and n-gram frequencies in text documents.
 
 (analyzer/herdan-vocabulary "apple banana apple banana cherry date" 3)
 ;; => [0.66, 0.66, 1.0, 1.0]
+
+(analyzer/most-significant-words "apple apple banana cherry cherry cherry" 2)
+;; => [["cherry" 18] ["apple" 10]]
 ```

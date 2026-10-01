@@ -1,6 +1,6 @@
 (ns analyzer.core-test
   (:require [clojure.test :refer [deftest is testing]]
-            [analyzer.core :refer [tokenize frequency-analysis vocabulary-size generate-ngrams sorted-frequencies most-common relative-frequencies word-length-distribution average-word-length text-summary keyword-density text-readability-score text-complexity-metrics batch-frequency-analysis jaccard-similarity cosine-similarity manhattan-distance euclidean-distance hamming-distance text-similarity-report calculate-idf tf-idf-analysis tf-idf-top-terms clean-text lexical-diversity global-ngram-analysis normalize-text add-stop-words remove-stop-words common-words-analysis document-frequency-mapping shannon-entropy zipfs-law-analysis gunning-fog-index word-cloud-data text-to-freq-map cluster-documents kullback-leibler-divergence herdan-vocabulary dominant-ngram canberra-distance bray-curtis-dissimilarity]]))
+            [analyzer.core :refer [tokenize frequency-analysis vocabulary-size generate-ngrams sorted-frequencies most-common relative-frequencies word-length-distribution average-word-length text-summary keyword-density text-readability-score text-complexity-metrics batch-frequency-analysis jaccard-similarity cosine-similarity manhattan-distance euclidean-distance hamming-distance text-similarity-report calculate-idf tf-idf-analysis tf-idf-top-terms clean-text lexical-diversity global-ngram-analysis normalize-text add-stop-words remove-stop-words common-words-analysis document-frequency-mapping shannon-entropy zipfs-law-analysis gunning-fog-index word-cloud-data text-to-freq-map cluster-documents kullback-leibler-divergence herdan-vocabulary dominant-ngram canberra-distance bray-curtis-dissimilarity most-significant-words]]))
 
 (deftest test-tokenize
   (testing "Basic tokenization"
@@ -351,3 +351,15 @@
         (is (= 2 (count clusters)))
         (is (some (fn [c] (and (contains? (set c) "d1") (contains? (set c) "d2"))) clusters))
         (is (some (fn [c] (contains? (set c) "d3")) clusters))))))
+
+(deftest test-most-significant-words
+  (testing "Significance based on frequency * length"
+    (let [text "apple apple banana cherry cherry cherry"
+          sig (most-significant-words text 2 :stop-words #{})]
+      ;; apple: 2 * 5 = 10
+      ;; banana: 1 * 6 = 6
+      ;; cherry: 3 * 6 = 18
+      ;; Expected: [["cherry" 18] ["apple" 10]]
+      (is (= [["cherry" 18] ["apple" 10]] sig)))))
+  (testing "Empty text for significance"
+    (is (= [] (most-significant-words "" 5 :stop-words #{}))))))

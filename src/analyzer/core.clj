@@ -431,4 +431,15 @@
   {:manhattan (reduce + (map (fn [[x y]] (Math/abs (- x y))) (map vector v1 v2)))
    :euclidean (Math/sqrt (reduce + (map (fn [[x y]] (let [d (- x y)] (* d d))) (map vector v1 v2))))
    :chebyshev (chebyshev-distance v1 v2)
-   :minkowski (minkowski-distance v1 v2 p)}))
+   :minkowski (minkowski-distance v1 v2 p)})
+
+(defn most-significant-words
+  "Identify the most significant words based on frequency * length. 
+   This helps highlight content-bearing words over common short words."
+  [text n & {:keys [stop-words] :or {stop-words default-stop-words}}]
+  (let [freqs (frequency-analysis text :stop-words stop-words)]
+    (->> freqs
+         (map (fn [[word count]] [word (* count (count word))]))
+         (sort-by second)
+         (reverse)
+         (take n))))
