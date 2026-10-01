@@ -408,3 +408,27 @@
                                      others))
               new-remaining (remove #(contains? (set cluster) %) others)]
           (recur new-remaining (conj clusters cluster))))))))
+
+(defn text-to-vector
+  "Convert text to a frequency vector based on a provided vocabulary."
+  [text vocabulary & {:keys [stop-words] :or {stop-words default-stop-words}}]
+  (let [freqs (frequency-analysis text :stop-words stop-words)]
+    (map #(get freqs % 0) vocabulary)))
+
+(defn chebyshev-distance
+  "Calculate the Chebyshev distance (L-infinity norm) between two vectors."
+  [v1 v2]
+  (apply max (map #(Math/abs (- % %)) (map vector v1 v2))))
+
+(defn minkowski-distance
+  "Calculate the Minkowski distance between two vectors for a given p."
+  [v1 v2 p]
+  (Math/pow (reduce + (map (fn [[x y]] (Math/pow (Math/abs (- x y)) p)) (map vector v1 v2))) (/ 1.0 p)))
+
+(defn vector-distance-report
+  "Return a map of various distance metrics between two vectors."
+  [v1 v2 & {:keys [p] :or {p 3}}]
+  {:manhattan (reduce + (map (fn [[x y]] (Math/abs (- x y))) (map vector v1 v2)))
+   :euclidean (Math/sqrt (reduce + (map (fn [[x y]] (let [d (- x y)] (* d d))) (map vector v1 v2))))
+   :chebyshev (chebyshev-distance v1 v2)
+   :minkowski (minkowski-distance v1 v2 p)}))
