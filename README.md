@@ -36,4 +36,7 @@ A small utility to analyze word and n-gram frequencies in text documents.
 
 (analyzer/most-significant-words "apple apple banana cherry cherry cherry" 2)
 ;; => [["cherry" 18] ["apple" 10]]
+
+(analyzer/extractive-summarize "Long text here..." 2)
+;; => Returns top 2 sentences based on TF-IDF importance
 ```

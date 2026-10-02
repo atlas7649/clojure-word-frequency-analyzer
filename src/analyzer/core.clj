@@ -443,3 +443,25 @@
          (sort-by second)
          (reverse)
          (take n))))
+
+(defn extractive-summarize
+  "Generate an extractive summary of the text by ranking sentences based on the TF-IDF of their words.
+   Takes the top `n` sentences."
+  [text n & {:keys [stop-words] :or {stop-words default-stop-words}}]
+  (let [sentences (str/split text #[\\.!] ) 
+        clean-sentences (remove str/blank? sentences)
+        docs-map (into {} (map-indexed (fn [i s] [i s]) clean-sentences))
+        tfidf-scores (tf-idf-analysis docs-map :stop-words stop-words)]
+    (->> clean-sentences
+         (map-indexed (fn [idx sentence]
+                         (let [words (tokenize sentence)
+                               score (reduce + (map (fn [w] (get-in tfidf-scores [idx w] 0.0)) words))]
+                           [idx score sentence])))
+         (sort-by second)
+         (reverse)
+         (take n)
+         (sort-by first)
+         (map third)
+         (str/join ". ")
+         (str/trim)
+         (fn [s] (if (empty? s) "" (str s "."))))))

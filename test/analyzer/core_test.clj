@@ -1,6 +1,6 @@
 (ns analyzer.core-test
   (:require [clojure.test :refer [deftest is testing]]
-            [analyzer.core :refer [tokenize frequency-analysis vocabulary-size generate-ngrams sorted-frequencies most-common relative-frequencies word-length-distribution average-word-length text-summary keyword-density text-readability-score text-complexity-metrics batch-frequency-analysis jaccard-similarity cosine-similarity manhattan-distance euclidean-distance hamming-distance text-similarity-report calculate-idf tf-idf-analysis tf-idf-top-terms clean-text lexical-diversity global-ngram-analysis normalize-text add-stop-words remove-stop-words common-words-analysis document-frequency-mapping shannon-entropy zipfs-law-analysis gunning-fog-index word-cloud-data text-to-freq-map cluster-documents kullback-leibler-divergence herdan-vocabulary dominant-ngram canberra-distance bray-curtis-dissimilarity most-significant-words]]))
+            [analyzer.core :refer [tokenize frequency-analysis vocabulary-size generate-ngrams sorted-frequencies most-common relative-frequencies word-length-distribution average-word-length text-summary keyword-density text-readability-score text-complexity-metrics batch-frequency-analysis jaccard-similarity cosine-similarity manhattan-distance euclidean-distance hamming-distance text-similarity-report calculate-idf tf-idf-analysis tf-idf-top-terms clean-text lexical-diversity global-ngram-analysis normalize-text add-stop-words remove-stop-words common-words-analysis document-frequency-mapping shannon-entropy zipfs-law-analysis gunning-fog-index word-cloud-data text-to-freq-map cluster-documents kullback-leibler-divergence herdan-vocabulary dominant-ngram canberra-distance bray-curtis-dissimilarity most-significant-words extractive-summarize]]))
 
 (deftest test-tokenize
   (testing "Basic tokenization"
@@ -360,6 +360,15 @@
       ;; banana: 1 * 6 = 6
       ;; cherry: 3 * 6 = 18
       ;; Expected: [["cherry" 18] ["apple" 10]]
-      (is (= [["cherry" 18] ["apple" 10]] sig)))))
+      (is (= [["cherry" 18] ["apple" 10]] sig))))
   (testing "Empty text for significance"
     (is (= [] (most-significant-words "" 5 :stop-words #{}))))))
+
+(deftest test-extractive-summarize
+  (testing "Basic summarization"
+    (let [text "The quick brown fox jumps over the lazy dog. The fox is very quick. The dog is lazy."]
+      ;; Each sentence is a doc. TF-IDF will highlight distinct words.
+      (let [summary (extractive-summarize text 1 :stop-words #{})]
+        (is (not (empty? summary))))))
+  (testing "Summarization with empty text"
+    (is (= "" (extractive-summarize "" 2 :stop-words #{}))))))
