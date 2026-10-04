@@ -27,26 +27,39 @@
   [text & {:keys [pattern] :or {pattern #[^\\W&&[^\\s]]}}]
   (str/replace text pattern ""))
 
+(defn simple-stem
+  "A very basic suffix stripper to group similar words (e.g., 'running' -> 'run')."
+  [word]
+  (cond
+    (str/ends-with? word "ing") (str/substring word 0 (- (count word) 3))
+    (str/ends-with? word "ed") (str/substring word 0 (- (count word) 2))
+    (str/ends-with? word "ies") (str/replace word #"ies$" "y")
+    (str/ends-with? word "s") (if (not= (count word) 1) (str/substring word 0 (dec (count word))) word)
+    :else word))
+
 (defn tokenize
   "Split text into a sequence of lowercase words, removing non-alphanumeric characters."
-  [text]
-  (->> text
-       (normalize-text)
-       (clean-text)
-       (str/split #\\s+)
-       (remove empty?)))
+  [text & {:keys [stem] :or {stem false}}]
+  (let [tokens (->> text
+                    (normalize-text)
+                    (clean-text)
+                    (str/split #\\s+)
+                    (remove empty?))]
+    (if stem
+      (map simple-stem tokens)
+      tokens)))
 
 (defn frequency-analysis
   "Calculate word frequencies, optionally filtering out stop words."
-  [text & {:keys [stop-words] :or {stop-words default-stop-words}}]
-  (->> (tokenize text)
+  [text & {:keys [stop-words stem] :or {stop-words default-stop-words stem false}}]
+  (->> (tokenize text :stem stem)
        (remove #(contains? stop-words %))
        (frequencies)))
 
 (defn vocabulary-size
   "Calculate the number of unique words in the text, optionally filtering stop words."
-  [text & {:keys [stop-words] :or {stop-words default-stop-words}}]
-  (count (set (->> (tokenize text)
+  [text & {:keys [stop-words stem] :or {stop-words default-stop-words stem false}}]
+  (count (set (->> (tokenize text :stem stem)
                    (remove #(contains? stop-words %))))))
 
 (defn sorted-frequencies
@@ -70,8 +83,8 @@
 
 (defn generate-ngrams
   "Generate n-grams from the provided text, optionally filtering stop words."
-  [text n & {:keys [stop-words] :or {stop-words nil}}]
-  (let [words (tokenize text)
+  [text n & {:keys [stop-words stem] :or {stop-words nil stem false}}]
+  (let [words (tokenize text :stem stem)
         filtered-words (if stop-words (remove #(contains? stop-words %) words) words)]
     (->> filtered-words
          (partition n 1)
@@ -79,22 +92,22 @@
 
 (defn dominant-ngram
   "Find the most frequent n-gram of size n in the text."
-  [text n & {:keys [stop-words] :or {stop-words nil}}]
-  (let [ngrams (generate-ngrams text n :stop-words stop-words)]
+  [text n & {:keys [stop-words stem] :or {stop-words nil stem false}}]
+  (let [ngrams (generate-ngrams text n :stop-words stop-words :stem stem)]
     (first (sorted-frequencies ngrams))))
 
 (defn word-length-distribution
   "Calculate the frequency of word lengths in the text, optionally filtering stop words."
-  [text & {:keys [stop-words] :or {stop-words default-stop-words}}]
-  (->> (tokenize text)
+  [text & {:keys [stop-words stem] :or {stop-words default-stop-words stem false}}]
+  (->> (tokenize text :stem stem)
        (remove #(contains? stop-words %))
        (map count)
        (frequencies)))
 
 (defn average-word-length
   "Calculate the average length of words in the text, optionally filtering stop words."
-  [text & {:keys [stop-words] :or {stop-words default-stop-words}}]
-  (let [words (->> (tokenize text)
+  [text & {:keys [stop-words stem] :or {stop-words default-stop-words stem false}}]
+  (let [words (->> (tokenize text :stem stem)
                     (remove #(contains? stop-words %)))]
     (if (empty? words)
       0
@@ -102,21 +115,22 @@
 
 (defn text-summary
   "Return a summary containing vocabulary size and the top N most frequent words."
-  [text n & {:keys [stop-words] :or {stop-words default-stop-words}}]
-  (let [freqs (frequency-analysis text :stop-words stop-words)]
-    {:vocabulary-size (vocabulary-size text :stop-words stop-words)
+  [text n & {:keys [stop-words stem] :or {stop-words default-stop-words stem false}}]
+  (let [freqs (frequency-analysis text :stop-words stop-words :stem stem)]
+    {:vocabulary-size (vocabulary-size text :stop-words stop-words :stem stem)
      :top-words (most-common freqs n)}))
 
 (defn keyword-density
   "Calculate the density of specific keywords in the text relative to the total word count."
-  [text keywords]
-  (let [words (tokenize text)
+  [text keywords & {:keys [stem] :or {stem false}}]
+  (let [words (tokenize text :stem stem)
         total (count words)]
     (if (zero? total)
       (reduce (fn [m k] (assoc m k 0.0)) {} keywords)
       (let [freqs (frequencies words)]
-        (reduce (fn [m k] 
-                  (let [count (get freqs (str/lower-case k) 0)]
+        (reduce (fn [m k]
+                  (let [key-val (if stem (simple-stem (str/lower-case k)) (str/lower-case k))
+                        count (get freqs key-val 0)]
                     (assoc m k (/ count total))))
                 {} 
                 keywords)))))
@@ -159,32 +173,32 @@
 
 (defn text-complexity-metrics
   "Aggregate various complexity metrics for the given text."
-  [text & {:keys [stop-words] :or {stop-words default-stop-words}}]
+  [text & {:keys [stop-words stem] :or {stop-words default-stop-words stem false}}]
   {:readability-score (text-readability-score text)
    :gunning-fog-index (gunning-fog-index text)
-   :vocabulary-size (vocabulary-size text :stop-words stop-words)
-   :average-word-length (average-word-length text :stop-words stop-words)
-   :entropy (shannon-entropy text :stop-words stop-words)})
+   :vocabulary-size (vocabulary-size text :stop-words stop-words :stem stem)
+   :average-word-length (average-word-length text :stop-words stop-words :stem stem)
+   :entropy (shannon-entropy text :stop-words stop-words :stem stem)})
 
 (defn batch-frequency-analysis
   "Process multiple texts and return a map of labels to frequency maps."
-  [texts-map & {:keys [stop-words] :or {stop-words default-stop-words}}]
-  (reduce-kv (fn [m label text] (assoc m label (frequency-analysis text :stop-words stop-words))) {} texts-map))
+  [texts-map & {:keys [stop-words stem] :or {stop-words default-stop-words stem false}}]
+  (reduce-kv (fn [m label text] (assoc m label (frequency-analysis text :stop-words stop-words :stem stem))) {} texts-map))
 
 (defn jaccard-similarity
   "Calculate Jaccard similarity between two texts based on their sets of words."
-  [text1 text2 & {:keys [stop-words] :or {stop-words default-stop-words}}]
-  (let [set1 (set (->> (tokenize text1) (remove #(contains? stop-words %))))
-        set2 (set (->> (tokenize text2) (remove #(contains? stop-words %))))
+  [text1 text2 & {:keys [stop-words stem] :or {stop-words default-stop-words stem false}}]
+  (let [set1 (set (->> (tokenize text1 :stem stem) (remove #(contains? stop-words %))))
+        set2 (set (->> (tokenize text2 :stem stem) (remove #(contains? stop-words %))))
         intersection (count (clojure.set/intersection set1 set2))
         union (count (clojure.set/union set1 set2))]
     (if (zero? union) 0.0 (/ intersection union))))
 
 (defn cosine-similarity
   "Calculate Cosine Similarity between two texts based on word frequency vectors."
-  [text1 text2 & {:keys [stop-words] :or {stop-words default-stop-words}}]
-  (let [f1 (frequency-analysis text1 :stop-words stop-words)
-        f2 (frequency-analysis text2 :stop-words stop-words)
+  [text1 text2 & {:keys [stop-words stem] :or {stop-words default-stop-words stem false}}]
+  (let [f1 (frequency-analysis text1 :stop-words stop-words :stem stem)
+        f2 (frequency-analysis text2 :stop-words stop-words :stem stem)
         all-words (set (concat (keys f1) (keys f2)))
         dot-product (reduce + (map (fn [w] (* (get f1 w 0) (get f2 w 0))) all-words))
         mag1 (Math/sqrt (reduce + (map (fn [v] (* v v)) (vals f1))))
@@ -195,25 +209,25 @@
 
 (defn manhattan-distance
   "Calculate the Manhattan distance (L1 norm) between word frequency vectors of two texts."
-  [text1 text2 & {:keys [stop-words] :or {stop-words default-stop-words}}]
-  (let [f1 (frequency-analysis text1 :stop-words stop-words)
-        f2 (frequency-analysis text2 :stop-words stop-words)
+  [text1 text2 & {:keys [stop-words stem] :or {stop-words default-stop-words stem false}}]
+  (let [f1 (frequency-analysis text1 :stop-words stop-words :stem stem)
+        f2 (frequency-analysis text2 :stop-words stop-words :stem stem)
         all-words (set (concat (keys f1) (keys f2)))]
     (reduce + (map (fn [w] (Math/abs (- (get f1 w 0) (get f2 w 0)))) all-words))))
 
 (defn euclidean-distance
   "Calculate the Euclidean distance (L2 norm) between word frequency vectors of two texts."
-  [text1 text2 & {:keys [stop-words] :or {stop-words default-stop-words}}]
-  (let [f1 (frequency-analysis text1 :stop-words stop-words)
-        f2 (frequency-analysis text2 :stop-words stop-words)
+  [text1 text2 & {:keys [stop-words stem] :or {stop-words default-stop-words stem false}}]
+  (let [f1 (frequency-analysis text1 :stop-words stop-words :stem stem)
+        f2 (frequency-analysis text2 :stop-words stop-words :stem stem)
         all-words (set (concat (keys f1) (keys f2)))]
     (Math/sqrt (reduce + (map (fn [w] (let [diff (- (get f1 w 0) (get f2 w 0))] (* diff diff))) all-words))))
 
 (defn hamming-distance
   "Calculate the Hamming distance between two texts based on the set of words present (binary vector)."
-  [text1 text2 & {:keys [stop-words] :or {stop-words default-stop-words}}]
-  (let [set1 (set (->> (tokenize text1) (remove #(contains? stop-words %))))
-        set2 (set (->> (tokenize text2) (remove #(contains? stop-words %))))
+  [text1 text2 & {:keys [stop-words stem] :or {stop-words default-stop-words stem false}}]
+  (let [set1 (set (->> (tokenize text1 :stem stem) (remove #(contains? stop-words %))))
+        set2 (set (->> (tokenize text2 :stem stem) (remove #(contains? stop-words %))))
         all-words (clojure.set/union set1 set2)]
     (count (filter (fn [w] (not= (contains? set1 w) (contains? set2 w))) all-words))))
 
@@ -221,9 +235,9 @@
   "Calculate Canberra distance between word frequency vectors of two texts.
    d = sum(|pi - qi| / (|pi| + |qi|))
    Handles zero denominators by treating the term as 0."
-  [text1 text2 & {:keys [stop-words] :or {stop-words default-stop-words}}]
-  (let [f1 (frequency-analysis text1 :stop-words stop-words)
-        f2 (frequency-analysis text2 :stop-words stop-words)
+  [text1 text2 & {:keys [stop-words stem] :or {stop-words default-stop-words stem false}}]
+  (let [f1 (frequency-analysis text1 :stop-words stop-words :stem stem)
+        f2 (frequency-analysis text2 :stop-words stop-words :stem stem)
         all-words (set (concat (keys f1) (keys f2)))]
     (reduce + (map (fn [w]
                       (let [v1 (get f1 w 0)
@@ -235,9 +249,9 @@
 (defn bray-curtis-dissimilarity
   "Calculate Bray-Curtis dissimilarity between word frequency vectors of two texts.
    d = sum(|pi - qi|) / sum(|pi + qi|)"
-  [text1 text2 & {:keys [stop-words] :or {stop-words default-stop-words}}]
-  (let [f1 (frequency-analysis text1 :stop-words stop-words)
-        f2 (frequency-analysis text2 :stop-words stop-words)
+  [text1 text2 & {:keys [stop-words stem] :or {stop-words default-stop-words stem false}}]
+  (let [f1 (frequency-analysis text1 :stop-words stop-words :stem stem)
+        f2 (frequency-analysis text2 :stop-words stop-words :stem stem)
         all-words (set (concat (keys f1) (keys f2)))
         sum-diff (reduce + (map (fn [w] (Math/abs (- (get f1 w 0) (get f2 w 0)))) all-words))
         sum-total (reduce + (map (fn [w] (+ (get f1 w 0) (get f2 w 0))) all-words))]
@@ -245,22 +259,22 @@
 
 (defn text-similarity-report
   "Return a map containing multiple similarity and distance metrics between two texts."
-  [text1 text2 & {:keys [stop-words] :or {stop-words default-stop-words}}]
-  {:jaccard (jaccard-similarity text1 text2 :stop-words stop-words)
-   :cosine (cosine-similarity text1 text2 :stop-words stop-words)
-   :manhattan (manhattan-distance text1 text2 :stop-words stop-words)
-   :euclidean (euclidean-distance text1 text2 :stop-words stop-words)
-   :hamming (hamming-distance text1 text2 :stop-words stop-words)
-   :canberra (canberra-distance text1 text2 :stop-words stop-words)
-   :bray-curtis (bray-curtis-dissimilarity text1 text2 :stop-words stop-words)}))
+  [text1 text2 & {:keys [stop-words stem] :or {stop-words default-stop-words stem false}}]
+  {:jaccard (jaccard-similarity text1 text2 :stop-words stop-words :stem stem)
+   :cosine (cosine-similarity text1 text2 :stop-words stop-words :stem stem)
+   :manhattan (manhattan-distance text1 text2 :stop-words stop-words :stem stem)
+   :euclidean (euclidean-distance text1 text2 :stop-words stop-words :stem stem)
+   :hamming (hamming-distance text1 text2 :stop-words stop-words :stem stem)
+   :canberra (canberra-distance text1 text2 :stop-words stop-words :stem stem)
+   :bray-curtis (bray-curtis-dissimilarity text1 text2 :stop-words stop-words :stem stem)}))
 
 (defn kullback-leibler-divergence
   "Calculate the KL Divergence between the word distributions of two texts.
    D_KL(P || Q) = sum(P(i) * log(P(i) / Q(i)))
    A small epsilon is added to Q to avoid division by zero."
-  [text1 text2 & {:keys [stop-words] :or {stop-words default-stop-words}}]
-  (let [p (relative-frequencies (frequency-analysis text1 :stop-words stop-words))
-        q (relative-frequencies (frequency-analysis text2 :stop-words stop-words))
+  [text1 text2 & {:keys [stop-words stem] :or {stop-words default-stop-words stem false}}]
+  (let [p (relative-frequencies (frequency-analysis text1 :stop-words stop-words :stem stem))
+        q (relative-frequencies (frequency-analysis text2 :stop-words stop-words :stem stem))
         epsilon 1e-10
         all-words (keys p)]
     (if (empty? p)
@@ -273,9 +287,9 @@
 
 (defn calculate-idf
   "Calculate Inverse Document Frequency for words across a collection of documents."
-  [docs & {:keys [stop-words] :or {stop-words default-stop-words}}]
+  [docs & {:keys [stop-words stem] :or {stop-words default-stop-words stem false}}]
   (let [num-docs (count docs)
-        all-tokens (map #(set (->> (tokenize %) (remove #(contains? stop-words %)))) docs)
+        all-tokens (map #(set (->> (tokenize % :stem stem) (remove #(contains? stop-words %)))) docs)
         vocabulary (apply set (mapcat identity all-tokens))]
     (reduce-kv (fn [m word _]
                   (let [docs-with-word (count (filter #(contains? % word) all-tokens))]
@@ -286,11 +300,11 @@
 
 (defn tf-idf-analysis
   "Calculate TF-IDF scores for a set of documents."
-  [docs-map & {:keys [stop-words] :or {stop-words default-stop-words}}]
+  [docs-map & {:keys [stop-words stem] :or {stop-words default-stop-words stem false}}]
   (let [docs (vals docs-map)
-        idf-map (calculate-idf docs :stop-words stop-words)]
+        idf-map (calculate-idf docs :stop-words stop-words :stem stem)]
     (reduce-kv (fn [m label text]
-                  (let [tf (relative-frequencies (frequency-analysis text :stop-words stop-words))
+                  (let [tf (relative-frequencies (frequency-analysis text :stop-words stop-words :stem stem))
                         tfidf (reduce-kv (fn [inner-m word tf-val]
                                              (assoc inner-m word (* tf-val (get idf-map word 0))))
                                           {} 
@@ -301,8 +315,8 @@
 
 (defn tf-idf-top-terms
   "Extract the top N terms for each document based on TF-IDF scores."
-  [docs-map n & {:keys [stop-words] :or {stop-words default-stop-words}}]
-  (let [tfidf-results (tf-idf-analysis docs-map :stop-words stop-words)]
+  [docs-map n & {:keys [stop-words stem] :or {stop-words default-stop-words stem false}}]
+  (let [tfidf-results (tf-idf-analysis docs-map :stop-words stop-words :stem stem)]
     (reduce-kv (fn [m label scores]
                   (assoc m label (most-common scores n)))
                 {} 
@@ -310,8 +324,8 @@
 
 (defn lexical-diversity
   "Calculate Type-Token Ratio (TTR) which is vocabulary size divided by total tokens."
-  [text & {:keys [stop-words] :or {stop-words default-stop-words}}]
-  (let [tokens (->> (tokenize text) (remove #(contains? stop-words %)))]
+  [text & {:keys [stop-words stem] :or {stop-words default-stop-words stem false}}]
+  (let [tokens (->> (tokenize text :stem stem) (remove #(contains? stop-words %)))]
     (if (empty? tokens)
       0.0
       (/ (count (set tokens)) (count tokens)))))
@@ -319,8 +333,8 @@
 (defn herdan-vocabulary
   "Calculate Herdan's Vocabulary (TTR over a sequence of token windows).
    Returns a sequence of TTR values for windows of size window-size."
-  [text window-size & {:keys [stop-words] :or {stop-words default-stop-words}}]
-  (let [tokens (->> (tokenize text) (remove #(contains? stop-words %)))]
+  [text window-size & {:keys [stop-words stem] :or {stop-words default-stop-words stem false}}]
+  (let [tokens (->> (tokenize text :stem stem) (remove #(contains? stop-words %)))]
     (->> tokens
          (partition window-size 1)
          (map (fn [window]
@@ -330,8 +344,8 @@
 
 (defn shannon-entropy
   "Calculate the Shannon entropy of the word distribution in the text."
-  [text & {:keys [stop-words] :or {stop-words default-stop-words}}]
-  (let [freqs (frequency-analysis text :stop-words stop-words)
+  [text & {:keys [stop-words stem] :or {stop-words default-stop-words stem false}}]
+  (let [freqs (frequency-analysis text :stop-words stop-words :stem stem)
         probs (relative-frequencies freqs)]
     (if (empty? probs)
       0.0
@@ -339,8 +353,8 @@
 
 (defn global-ngram-analysis
   "Calculate total frequencies of n-grams across multiple documents."
-  [docs-map n & {:keys [stop-words] :or {stop-words nil}}]
-  (let [all-ngrams (mapv #(generate-ngrams % n :stop-words stop-words) (vals docs-map))]
+  [docs-map n & {:keys [stop-words stem] :or {stop-words nil stem false}}]
+  (let [all-ngrams (mapv #(generate-ngrams % n :stop-words stop-words :stem stem) (vals docs-map))]
     (reduce-kv (fn [acc ngram count]
                   (assoc acc ngram (+ (get acc ngram 0) count)))
                 {} 
@@ -363,8 +377,8 @@
 (defn zipfs-law-analysis
   "Analyze if the word distribution follows Zipf's Law.
    Returns a sequence of [rank frequency predicted-frequency] for the top N words."
-  [text n & {:keys [stop-words] :or {stop-words default-stop-words}}]
-  (let [freqs (frequency-analysis text :stop-words stop-words)
+  [text n & {:keys [stop-words stem] :or {stop-words default-stop-words stem false}}]
+  (let [freqs (frequency-analysis text :stop-words stop-words :stem stem)
         sorted (sorted-frequencies freqs)
         total-tokens (reduce + (vals freqs))
         most-freq-count (if (empty? sorted) 0 (second (first sorted)))]
@@ -378,20 +392,20 @@
 
 (defn word-cloud-data
   "Generate data structured for word cloud visualization: a sequence of {text, value} maps."
-  [text n & {:keys [stop-words] :or {stop-words default-stop-words}}]
-  (let [freqs (frequency-analysis text :stop-words stop-words)]
+  [text n & {:keys [stop-words stem] :or {stop-words default-stop-words stem false}}]
+  (let [freqs (frequency-analysis text :stop-words stop-words :stem stem)]
     (->> (most-common freqs n)
          (map (fn [[word count]] {:text word :value count})))))
 
 (defn text-to-freq-map
   "Helper to convert a text block directly to a frequency map with specified stop words."
-  [text stop-words]
-  (frequency-analysis text :stop-words stop-words))
+  [text stop-words & {:keys [stem] :or {stem false}}]
+  (frequency-analysis text :stop-words stop-words :stem stem))
 
 (defn cluster-documents
   "Group documents into clusters based on a minimum cosine similarity threshold.
    Returns a vector of clusters, where each cluster is a vector of document labels."
-  [docs-map threshold & {:keys [stop-words] :or {stop-words default-stop-words}}]
+  [docs-map threshold & {:keys [stop-words stem] :or {stop-words default-stop-words stem false}}]
   (let [labels (vec (keys docs-map))]
     (loop [remaining labels
            clusters []]
@@ -401,7 +415,7 @@
               others (rest remaining)
               cluster (cons current
                            (reduce (fn [acc other]
-                                       (if (>= (cosine-similarity (get docs-map current) (get docs-map other) :stop-words stop-words) threshold)
+                                       (if (>= (cosine-similarity (get docs-map current) (get docs-map other) :stop-words stop-words :stem stem) threshold)
                                          (conj acc other)
                                          acc))
                                      []
@@ -411,8 +425,8 @@
 
 (defn text-to-vector
   "Convert text to a frequency vector based on a provided vocabulary."
-  [text vocabulary & {:keys [stop-words] :or {stop-words default-stop-words}}]
-  (let [freqs (frequency-analysis text :stop-words stop-words)]
+  [text vocabulary & {:keys [stop-words stem] :or {stop-words default-stop-words stem false}}]
+  (let [freqs (frequency-analysis text :stop-words stop-words :stem stem)]
     (map #(get freqs % 0) vocabulary)))
 
 (defn chebyshev-distance
@@ -436,8 +450,8 @@
 (defn most-significant-words
   "Identify the most significant words based on frequency * length. 
    This helps highlight content-bearing words over common short words."
-  [text n & {:keys [stop-words] :or {stop-words default-stop-words}}]
-  (let [freqs (frequency-analysis text :stop-words stop-words)]
+  [text n & {:keys [stop-words stem] :or {stop-words default-stop-words stem false}}]
+  (let [freqs (frequency-analysis text :stop-words stop-words :stem stem)]
     (->> freqs
          (map (fn [[word count]] [word (* count (count word))]))
          (sort-by second)
@@ -447,14 +461,14 @@
 (defn extractive-summarize
   "Generate an extractive summary of the text by ranking sentences based on the TF-IDF of their words.
    Takes the top `n` sentences."
-  [text n & {:keys [stop-words] :or {stop-words default-stop-words}}]
+  [text n & {:keys [stop-words stem] :or {stop-words default-stop-words stem false}}]
   (let [sentences (str/split text #[\\.!] ) 
         clean-sentences (remove str/blank? sentences)
         docs-map (into {} (map-indexed (fn [i s] [i s]) clean-sentences))
-        tfidf-scores (tf-idf-analysis docs-map :stop-words stop-words)]
+        tfidf-scores (tf-idf-analysis docs-map :stop-words stop-words :stem stem)]
     (->> clean-sentences
          (map-indexed (fn [idx sentence]
-                         (let [words (tokenize sentence)
+                         (let [words (tokenize sentence :stem stem)
                                score (reduce + (map (fn [w] (get-in tfidf-scores [idx w] 0.0)) words))]
                            [idx score sentence])))
          (sort-by second)

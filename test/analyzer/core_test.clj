@@ -1,12 +1,14 @@
 (ns analyzer.core-test
   (:require [clojure.test :refer [deftest is testing]]
-            [analyzer.core :refer [tokenize frequency-analysis vocabulary-size generate-ngrams sorted-frequencies most-common relative-frequencies word-length-distribution average-word-length text-summary keyword-density text-readability-score text-complexity-metrics batch-frequency-analysis jaccard-similarity cosine-similarity manhattan-distance euclidean-distance hamming-distance text-similarity-report calculate-idf tf-idf-analysis tf-idf-top-terms clean-text lexical-diversity global-ngram-analysis normalize-text add-stop-words remove-stop-words common-words-analysis document-frequency-mapping shannon-entropy zipfs-law-analysis gunning-fog-index word-cloud-data text-to-freq-map cluster-documents kullback-leibler-divergence herdan-vocabulary dominant-ngram canberra-distance bray-curtis-dissimilarity most-significant-words extractive-summarize]]))
+            [analyzer.core :refer [tokenize frequency-analysis vocabulary-size generate-ngrams sorted-frequencies most-common relative-frequencies word-length-distribution average-word-length text-summary keyword-density text-readability-score text-complexity-metrics batch-frequency-analysis jaccard-similarity cosine-similarity manhattan-distance euclidean-distance hamming-distance text-similarity-report calculate-idf tf-idf-analysis tf-idf-top-terms clean-text lexical-diversity global-ngram-analysis normalize-text add-stop-words remove-stop-words common-words-analysis document-frequency-mapping shannon-entropy zipfs-law-analysis gunning-fog-index word-cloud-data text-to-freq-map cluster-documents kullback-leibler-divergence herdan-vocabulary dominant-ngram canberra-distance bray-curtis-dissimilarity most-significant-words extractive-summarize simple-stem]]))
 
 (deftest test-tokenize
   (testing "Basic tokenization"
     (is (= ["hello" "world"] (tokenize "Hello world!"))))
   (testing "Whitespace handling"
-    (is (= ["foo" "bar"] (tokenize "  foo   bar  ")))))
+    (is (= ["foo" "bar"] (tokenize "  foo   bar  "))))
+  (testing "Tokenization with stemming"
+    (is (= ["jump" "fox"] (tokenize "Jumping fox" :stem true)))))
 
 (deftest test-normalize-text
   (testing "Text normalization"
@@ -32,7 +34,10 @@
   (testing "Word counting with default stop-words"
     (let [text "The quick brown fox jumps over the lazy dog"]
       (is (= 1 ((frequency-analysis text) "quick")))
-      (is (nil? ((frequency-analysis text) "the"))))))
+      (is (nil? ((frequency-analysis text) "the")))))
+  (testing "Frequency analysis with stemming"
+    (let [text "jumping jumped jump"]
+      (is (= 3 ((frequency-analysis text :stop-words #{} :stem true) "jump"))))))
 
 (deftest test-vocabulary-size
   (testing "Vocabulary count with default stop-words"
@@ -41,7 +46,10 @@
   (testing "Vocabulary count with custom stop-words"
     (let [text "apple banana apple orange"
           stop-words #{"orange"}]
-      (is (= 2 (vocabulary-size text :stop-words stop-words))))))
+      (is (= 2 (vocabulary-size text :stop-words stop-words)))))
+  (testing "Vocabulary count with stemming"
+    (let [text "jumping jumped jump"]
+      (is (= 1 (vocabulary-size text :stop-words #{} :stem true))))))
 
 (deftest test-sorted-frequencies
   (testing "Sorting and filtering frequencies"
@@ -68,7 +76,11 @@
     (let [text "The quick brown fox jumps over the lazy dog"
           stop-words #{"the" "over"}]
       (is (= 1 ((generate-ngrams text 2 :stop-words stop-words) ["quick" "brown")))
-      (is (nil? ((generate-ngrams text 2 :stop-words stop-words) ["the" "quick"]))))))
+      (is (nil? ((generate-ngrams text 2 :stop-words stop-words) ["the" "quick"])))))
+  (testing "N-gram generation with stemming"
+    (let [text "Running fast run fast"
+          ngrams (generate-ngrams text 2 :stop-words #{} :stem true)]
+      (is (= 2 (get ngrams ["run" "fast"]))))))
 
 (deftest test-dominant-ngram
   (testing "Finding most frequent n-gram"
@@ -113,6 +125,10 @@
       (is (= {"missing" 0.0} (keyword-density text keywords)))))
   (testing "Density with empty text"
     (is (= {"test" 0.0} (keyword-density "" ["test"])))))
+  (testing "Density with stemming"
+    (let [text "Running is fun"
+          keywords ["run"]
+      (is (= {"run" (/ 1 3)} (keyword-density text keywords :stem true))))))
 
 (deftest test-readability-score
   (testing "Readability score calculation"
