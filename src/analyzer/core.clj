@@ -432,7 +432,7 @@
 (defn chebyshev-distance
   "Calculate the Chebyshev distance (L-infinity norm) between two vectors."
   [v1 v2]
-  (apply max (map #(Math/abs (- % %)) (map vector v1 v2))))
+  (apply max (map #(Math/abs (- (first %) (second %))) (map vector v1 v2))))
 
 (defn minkowski-distance
   "Calculate the Minkowski distance between two vectors for a given p."

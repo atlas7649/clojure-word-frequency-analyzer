@@ -1,6 +1,6 @@
 (ns analyzer.core-test
   (:require [clojure.test :refer [deftest is testing]]
-            [analyzer.core :refer [tokenize frequency-analysis vocabulary-size generate-ngrams sorted-frequencies most-common relative-frequencies word-length-distribution average-word-length text-summary keyword-density text-readability-score text-complexity-metrics batch-frequency-analysis jaccard-similarity cosine-similarity manhattan-distance euclidean-distance hamming-distance text-similarity-report calculate-idf tf-idf-analysis tf-idf-top-terms clean-text lexical-diversity global-ngram-analysis normalize-text add-stop-words remove-stop-words common-words-analysis document-frequency-mapping shannon-entropy zipfs-law-analysis gunning-fog-index word-cloud-data text-to-freq-map cluster-documents kullback-leibler-divergence herdan-vocabulary dominant-ngram canberra-distance bray-curtis-dissimilarity most-significant-words extractive-summarize simple-stem]]))
+            [analyzer.core :refer [tokenize frequency-analysis vocabulary-size generate-ngrams sorted-frequencies most-common relative-frequencies word-length-distribution average-word-length text-summary keyword-density text-readability-score text-complexity-metrics batch-frequency-analysis jaccard-similarity cosine-similarity manhattan-distance euclidean-distance hamming-distance text-similarity-report calculate-idf tf-idf-analysis tf-idf-top-terms clean-text lexical-diversity global-ngram-analysis normalize-text add-stop-words remove-stop-words common-words-analysis document-frequency-mapping shannon-entropy zipfs-law-analysis gunning-fog-index word-cloud-data text-to-freq-map cluster-documents kullback-leibler-divergence herdan-vocabulary dominant-ngram canberra-distance bray-curtis-dissimilarity most-significant-words extractive-summarize simple-stem text-to-vector chebyshev-distance minkowski-distance vector-distance-report]]))
 
 (deftest test-tokenize
   (testing "Basic tokenization"
@@ -387,4 +387,19 @@
       (let [summary (extractive-summarize text 1 :stop-words #{})]
         (is (not (empty? summary))))))
   (testing "Summarization with empty text"
-    (is (= "" (extractive-summarize "" 2 :stop-words #{}))))))
+    (is (= "" (extractive-summarize "" 2 :stop-words #{})))))
+
+(deftest test-vector-metrics
+  (testing "text-to-vector conversion"
+    (let [vocab ["apple" "banana" "cherry"]
+          text "apple apple banana"]
+      (is (= [2 1 0] (text-to-vector text vocab :stop-words #{})))))
+  (testing "Chebyshev distance"
+    (is (= 2 (chebyshev-distance [1 5 3] [3 3 3]))))
+  (testing "Minkowski distance (p=1 is Manhattan)"
+    (is (= 4.0 (minkowski-distance [1 2] [3 4] 1))))
+  (testing "Vector distance report"
+    (let [report (vector-distance-report [1 2] [3 4])]
+      (is (= 4 (:manhattan report)))
+      (is (= (Math/sqrt 8) (:euclidean report)))
+      (is (= 2 (:chebyshev report)))))))
