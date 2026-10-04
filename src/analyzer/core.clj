@@ -462,23 +462,25 @@
   "Generate an extractive summary of the text by ranking sentences based on the TF-IDF of their words.
    Takes the top `n` sentences."
   [text n & {:keys [stop-words stem] :or {stop-words default-stop-words stem false}}]
-  (let [sentences (str/split text #[\\.!] ) 
-        clean-sentences (remove str/blank? sentences)
-        docs-map (into {} (map-indexed (fn [i s] [i s]) clean-sentences))
-        tfidf-scores (tf-idf-analysis docs-map :stop-words stop-words :stem stem)]
-    (->> clean-sentences
-         (map-indexed (fn [idx sentence]
-                         (let [words (tokenize sentence :stem stem)
-                               score (reduce + (map (fn [w] (get-in tfidf-scores [idx w] 0.0)) words))]
-                           [idx score sentence])))
-         (sort-by second)
-         (reverse)
-         (take n)
-         (sort-by first)
-         (map third)
-         (str/join ". ")
-         (str/trim)
-         (fn [s] (if (empty? s) "" (str s "."))))))
+  (if (str/blank? text)
+    ""
+    (let [sentences (->> text
+                         (str/split #"(?<=[\.!?])\\s+")
+                         (remove str/blank?))
+          docs-map (into {} (map-indexed (fn [i s] [i s]) sentences))
+          tfidf-scores (tf-idf-analysis docs-map :stop-words stop-words :stem stem)]
+      (->> sentences
+           (map-indexed (fn [idx sentence]
+                           (let [words (tokenize sentence :stem stem)
+                                 score (reduce + (map (fn [w] (get-in tfidf-scores [idx w] 0.0)) words))]
+                             [idx score sentence])))
+           (sort-by second)
+           (reverse)
+           (take n)
+           (sort-by first)
+           (map third)
+           (str/join " ")
+           (str/trim)))))
 
 (defn text-to-tfidf-vector
   "Convert text to a TF-IDF vector relative to a corpus of documents."
