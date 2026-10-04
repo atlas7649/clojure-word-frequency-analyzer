@@ -479,3 +479,13 @@
          (str/join ". ")
          (str/trim)
          (fn [s] (if (empty? s) "" (str s "."))))))
+
+(defn text-to-tfidf-vector
+  "Convert text to a TF-IDF vector relative to a corpus of documents."
+  [text corpus & {:keys [stop-words stem] :or {stop-words default-stop-words stem false}}]
+  (let [idf-map (calculate-idf corpus :stop-words stop-words :stem stem)
+        vocabulary (sort (keys idf-map))
+        tf (relative-frequencies (frequency-analysis text :stop-words stop-words :stem stem))]
+    (map #(let [word %]
+             (* (get tf word 0.0) (get idf-map word 0.0)))
+          vocabulary)))

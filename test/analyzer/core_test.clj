@@ -1,6 +1,6 @@
 (ns analyzer.core-test
   (:require [clojure.test :refer [deftest is testing]]
-            [analyzer.core :refer [tokenize frequency-analysis vocabulary-size generate-ngrams sorted-frequencies most-common relative-frequencies word-length-distribution average-word-length text-summary keyword-density text-readability-score text-complexity-metrics batch-frequency-analysis jaccard-similarity cosine-similarity manhattan-distance euclidean-distance hamming-distance text-similarity-report calculate-idf tf-idf-analysis tf-idf-top-terms clean-text lexical-diversity global-ngram-analysis normalize-text add-stop-words remove-stop-words common-words-analysis document-frequency-mapping shannon-entropy zipfs-law-analysis gunning-fog-index word-cloud-data text-to-freq-map cluster-documents kullback-leibler-divergence herdan-vocabulary dominant-ngram canberra-distance bray-curtis-dissimilarity most-significant-words extractive-summarize simple-stem text-to-vector chebyshev-distance minkowski-distance vector-distance-report]]))
+            [analyzer.core :refer [tokenize frequency-analysis vocabulary-size generate-ngrams sorted-frequencies most-common relative-frequencies word-length-distribution average-word-length text-summary keyword-density text-readability-score text-complexity-metrics batch-frequency-analysis jaccard-similarity cosine-similarity manhattan-distance euclidean-distance hamming-distance text-similarity-report calculate-idf tf-idf-analysis tf-idf-top-terms clean-text lexical-diversity global-ngram-analysis normalize-text add-stop-words remove-stop-words common-words-analysis document-frequency-mapping shannon-entropy zipfs-law-analysis gunning-fog-index word-cloud-data text-to-freq-map cluster-documents kullback-leibler-divergence herdan-vocabulary dominant-ngram canberra-distance bray-curtis-dissimilarity most-significant-words extractive-summarize simple-stem text-to-vector chebyshev-distance minkowski-distance vector-distance-report text-to-tfidf-vector]]))
 
 (deftest test-tokenize
   (testing "Basic tokenization"
@@ -402,4 +402,19 @@
     (let [report (vector-distance-report [1 2] [3 4])]
       (is (= 4 (:manhattan report)))
       (is (= (Math/sqrt 8) (:euclidean report)))
-      (is (= 2 (:chebyshev report)))))))
+      (is (= 2 (:chebyshev report))))))
+
+(deftest test-tfidf-vector
+  (testing "Text to TF-IDF vector"
+    (let [corpus ["apple banana" "apple cherry" "banana date"]
+          text "apple apple banana"
+          ;; IDF: apple=log(3/2), banana=log(3/2), cherry=log(3/1), date=log(3/1)
+          ;; TF: apple=2/3, banana=1/3
+          ;; Vocab (sorted): [apple banana cherry date]
+          ;; TF-IDF: [ (2/3)*log(1.5), (1/3)*log(1.5), 0, 0 ]
+          vec (text-to-tfidf-vector text corpus :stop-words #{})]
+      (is (= 4 (count vec)))
+      (is (= (* (/ 2 3) (Math/log 1.5)) (first vec)))
+      (is (= (* (/ 1 3) (Math/log 1.5)) (second vec)))
+      (is (= 0.0 (nth vec 2)))
+      (is (= 0.0 (nth vec 3)))))))
