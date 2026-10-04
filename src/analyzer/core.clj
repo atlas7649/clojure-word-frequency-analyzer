@@ -508,20 +508,12 @@
   "Calculate the Pearson correlation coefficient between two vectors."
   [v1 v2]
   (let [n (count v1)
-        sum-x (reduce + v1)
-        sum-y (reduce + v2)
-        sum-xy (reduce + (map (fn [[x y]] (* x y)) (map vector v1 v2)))
-        sum-x2 (reduce + (map (fn [x] (* x x)) v1))
-        sum-y2 (reduce + (map (fn [y] (* y y)) v2))
-        numerator (- sum-xy (* (/ sum-x n) (/ sum-y n)))
-        denominator (Math/sqrt (* (- sum-x2 (* (/ sum-x2 n) n)) (- sum-y2 (* (/ sum-y2 n) n))))]
-    ;; Correct denominator for Pearson
-    (let [mean-x (/ sum-x n)
-          mean-y (/ sum-y n)
-          num (reduce + (map (fn [[x y]] (* (- x mean-x) (- y mean-y))) (map vector v1 v2)))
-          den (Math/sqrt (* (reduce + (map (fn [x] (Math/pow (- x mean-x) 2)) v1)) 
+        mean-x (/ (reduce + v1) n)
+        mean-y (/ (reduce + v2) n)
+        num (reduce + (map (fn [[x y]] (* (- x mean-x) (- y mean-y))) (map vector v1 v2)))
+        den (Math/sqrt (* (reduce + (map (fn [x] (Math/pow (- x mean-x) 2)) v1)) 
                            (reduce + (map (fn [y] (Math/pow (- y mean-y) 2)) v2))))]
-      (if (zero? den) 0.0 (/ num den)))))
+      (if (or (zero? den) (NaN den)) 0.0 (/ num den))))
 
 (defn document-correlation-matrix
   "Compute a correlation matrix for a set of documents.
