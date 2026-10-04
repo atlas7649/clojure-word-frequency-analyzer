@@ -491,3 +491,48 @@
     (map #(let [word %]
              (* (get tf word 0.0) (get idf-map word 0.0)))
           vocabulary)))
+
+(defn document-term-matrix
+  "Convert a map of documents (label -> text) into a document-term matrix.
+   Returns a map where keys are labels and values are frequency vectors, along with the vocabulary."
+  [docs-map & {:keys [stop-words stem] :or {stop-words default-stop-words stem false}}]
+  (let [all-texts (vals docs-map)
+        vocab (sort (apply set (mapcat #(keys (frequency-analysis % :stop-words stop-words :stem stem)) all-texts)))
+        matrix (reduce-kv (fn [m label text]
+                            (assoc m label (text-to-vector text vocab :stop-words stop-words :stem stem)))
+                          {} 
+                          docs-map)]
+    {:matrix matrix :vocabulary vocab}))
+
+(defn pearson-correlation
+  "Calculate the Pearson correlation coefficient between two vectors."
+  [v1 v2]
+  (let [n (count v1)
+        sum-x (reduce + v1)
+        sum-y (reduce + v2)
+        sum-xy (reduce + (map (fn [[x y]] (* x y)) (map vector v1 v2)))
+        sum-x2 (reduce + (map (fn [x] (* x x)) v1))
+        sum-y2 (reduce + (map (fn [y] (* y y)) v2))
+        numerator (- sum-xy (* (/ sum-x n) (/ sum-y n)))
+        denominator (Math/sqrt (* (- sum-x2 (* (/ sum-x2 n) n)) (- sum-y2 (* (/ sum-y2 n) n))))]
+    ;; Correct denominator for Pearson
+    (let [mean-x (/ sum-x n)
+          mean-y (/ sum-y n)
+          num (reduce + (map (fn [[x y]] (* (- x mean-x) (- y mean-y))) (map vector v1 v2)))
+          den (Math/sqrt (* (reduce + (map (fn [x] (Math/pow (- x mean-x) 2)) v1)) 
+                           (reduce + (map (fn [y] (Math/pow (- y mean-y) 2)) v2))))]
+      (if (zero? den) 0.0 (/ num den)))))
+
+(defn document-correlation-matrix
+  "Compute a correlation matrix for a set of documents.
+   Returns a map of {label1 {label2 correlation}}."
+  [docs-map & {:keys [stop-words stem] :or {stop-words default-stop-words stem false}}]
+  (let [{:keys [matrix]} (document-term-matrix docs-map :stop-words stop-words :stem stem)
+        labels (keys matrix)]
+    (reduce (fn [acc l1]
+               (assoc acc l1 (reduce (fn [inner-acc l2]
+                                        (assoc inner-acc l2 (pearson-correlation (get matrix l1) (get matrix l2))))
+                                      {} 
+                                      labels)))
+             {} 
+             labels)))

@@ -39,4 +39,10 @@ A small utility to analyze word and n-gram frequencies in text documents.
 
 (analyzer/extractive-summarize "Long text here..." 2)
 ;; => Returns top 2 sentences based on TF-IDF importance
+
+(analyzer/document-term-matrix {"d1" "text one" "d2" "text two"})
+;; => {:matrix {"d1" [1 1 0] "d2" [0 1 1]} :vocabulary ["one" "text" "two"]}
+
+(analyzer/document-correlation-matrix {"d1" "apple banana" "d2" "apple banana"})
+;; => {"d1" {"d1" 1.0 "d2" 1.0} "d2" {"d1" 1.0 "d2" 1.0}}
 ```

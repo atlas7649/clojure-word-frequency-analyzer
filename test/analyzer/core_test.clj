@@ -1,6 +1,6 @@
 (ns analyzer.core-test
   (:require [clojure.test :refer [deftest is testing]]
-            [analyzer.core :refer [tokenize frequency-analysis vocabulary-size generate-ngrams sorted-frequencies most-common relative-frequencies word-length-distribution average-word-length text-summary keyword-density text-readability-score text-complexity-metrics batch-frequency-analysis jaccard-similarity cosine-similarity manhattan-distance euclidean-distance hamming-distance text-similarity-report calculate-idf tf-idf-analysis tf-idf-top-terms clean-text lexical-diversity global-ngram-analysis normalize-text add-stop-words remove-stop-words common-words-analysis document-frequency-mapping shannon-entropy zipfs-law-analysis gunning-fog-index word-cloud-data text-to-freq-map cluster-documents kullback-leibler-divergence herdan-vocabulary dominant-ngram canberra-distance bray-curtis-dissimilarity most-significant-words extractive-summarize simple-stem text-to-vector chebyshev-distance minkowski-distance vector-distance-report text-to-tfidf-vector]]))
+            [analyzer.core :refer [tokenize frequency-analysis vocabulary-size generate-ngrams sorted-frequencies most-common relative-frequencies word-length-distribution average-word-length text-summary keyword-density text-readability-score text-complexity-metrics batch-frequency-analysis jaccard-similarity cosine-similarity manhattan-distance euclidean-distance hamming-distance text-similarity-report calculate-idf tf-idf-analysis tf-idf-top-terms clean-text lexical-diversity global-ngram-analysis normalize-text add-stop-words remove-stop-words common-words-analysis document-frequency-mapping shannon-entropy zipfs-law-analysis gunning-fog-index word-cloud-data text-to-freq-map cluster-documents kullback-leibler-divergence herdan-vocabulary dominant-ngram canberra-distance bray-curtis-dissimilarity most-significant-words extractive-summarize simple-stem text-to-vector chebyshev-distance minkowski-distance vector-distance-report text-to-tfidf-vector document-term-matrix pearson-correlation document-correlation-matrix]]))
 
 (deftest test-tokenize
   (testing "Basic tokenization"
@@ -418,3 +418,26 @@
       (is (= (* (/ 1 3) (Math/log 1.5)) (second vec)))
       (is (= 0.0 (nth vec 2)))
       (is (= 0.0 (nth vec 3)))))))
+
+(deftest test-dtm
+  (testing "Document Term Matrix generation"
+    (let [docs {"d1" "apple banana" "d2" "apple apple"}
+          {:keys [matrix vocabulary]} (document-term-matrix docs :stop-words #{})]
+      (is (= ["apple" "banana"] vocabulary))
+      (is (= [1 1] (get matrix "d1")))
+      (is (= [2 0] (get matrix "d2"))))))
+
+(deftest test-correlation
+  (testing "Pearson correlation identical vectors"
+    (is (= 1.0 (pearson-correlation [1 2 3] [1 2 3]))))
+  (testing "Pearson correlation opposite vectors"
+    (is (= -1.0 (pearson-correlation [1 2 3] [3 2 1]))))
+  (testing "Pearson correlation orthogonal vectors"
+    (is (= 0.0 (pearson-correlation [1 0] [0 1])))))
+
+(deftest test-correlation-matrix
+  (testing "Correlation matrix structure"
+    (let [docs {"d1" "apple banana" "d2" "apple banana" "d3" "cherry date"}
+          corr (document-correlation-matrix docs :stop-words #{})]
+      (is (= 1.0 (get-in corr ["d1" "d2"])))
+      (is (not= 1.0 (get-in corr ["d1" "d3"]))))))
