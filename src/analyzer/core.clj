@@ -291,12 +291,14 @@
   (let [num-docs (count docs)
         all-tokens (map #(set (->> (tokenize % :stem stem) (remove #(contains? stop-words %)))) docs)
         vocabulary (apply set (mapcat identity all-tokens))]
-    (reduce-kv (fn [m word _]
-                  (let [docs-with-word (count (filter #(contains? % word) all-tokens))]
-                    (assoc m word (Math/log (/ num-docs (max 1 docs-with-word))))))
-                {} 
-                vocabulary 
-                nil)))
+    (if (zero? num-docs)
+      {}
+      (reduce-kv (fn [m word _]
+                    (let [docs-with-word (count (filter #(contains? % word) all-tokens))]
+                      (assoc m word (Math/log (/ num-docs (max 1 docs-with-word))))))
+                  {} 
+                  vocabulary 
+                  nil))))
 
 (defn tf-idf-analysis
   "Calculate TF-IDF scores for a set of documents."
@@ -528,3 +530,11 @@
                                       labels)))
              {} 
              labels)))
+
+(defn analysis-to-map
+  "Combine multiple analysis functions into a single comprehensive result map for a text."
+  [text n & {:keys [stop-words stem] :or {stop-words default-stop-words stem false}}]
+  {:metrics (text-complexity-metrics text :stop-words stop-words :stem stem)
+   :top-words (most-common (frequency-analysis text :stop-words stop-words :stem stem) n)
+   :diversity (lexical-diversity text :stop-words stop-words :stem stem)
+   :readability (text-readability-score text)})
