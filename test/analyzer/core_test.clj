@@ -1,6 +1,6 @@
 (ns analyzer.core-test
   (:require [clojure.test :refer [deftest is testing]]
-            [analyzer.core :refer [tokenize frequency-analysis vocabulary-size generate-ngrams sorted-frequencies most-common relative-frequencies word-length-distribution average-word-length text-summary keyword-density text-readability-score text-complexity-metrics batch-frequency-analysis jaccard-similarity cosine-similarity manhattan-distance euclidean-distance hamming-distance text-similarity-report calculate-idf tf-idf-analysis tf-idf-top-terms clean-text lexical-diversity global-ngram-analysis normalize-text add-stop-words remove-stop-words common-words-analysis document-frequency-mapping shannon-entropy zipfs-law-analysis gunning-fog-index word-cloud-data text-to-freq-map cluster-documents kullback-leibler-divergence herdan-vocabulary dominant-ngram canberra-distance bray-curtis-dissimilarity most-significant-words extractive-summarize simple-stem text-to-vector chebyshev-distance minkowski-distance vector-distance-report text-to-tfidf-vector document-term-matrix pearson-correlation document-correlation-matrix analysis-to-map]]))
+            [analyzer.core :refer [tokenize frequency-analysis vocabulary-size generate-ngrams sorted-frequencies most-common relative-frequencies word-length-distribution average-word-length text-summary keyword-density text-readability-score text-complexity-metrics batch-frequency-analysis jaccard-similarity cosine-similarity manhattan-distance euclidean-distance hamming-distance text-similarity-report calculate-idf tf-idf-analysis tf-idf-top-terms clean-text lexical-diversity global-ngram-analysis normalize-text add-stop-words remove-stop-words common-words-analysis document-frequency-mapping shannon-entropy zipfs-law-analysis gunning-fog-index word-cloud-data text-to-freq-map cluster-documents kullback-leibler-divergence herdan-vocabulary dominant-ngram canberra-distance bray-curtis-dissimilarity most-significant-words extractive-summarize simple-stem text-to-vector chebyshev-distance minkowski-distance vector-distance-report text-to-tfidf-vector document-term-matrix pearson-correlation document-correlation-matrix analysis-to-map count-syllables]]))
 
 (deftest test-tokenize
   (testing "Basic tokenization"
@@ -150,7 +150,7 @@
       ;; Total words: 14
       ;; Total sentences: 2
       ;; Avg sentence length: 14 / 2 = 7.0
-      ;; Complex words (>6 chars): [sophisticated, demonstration] (2 words)
+      ;; Complex words (>=3 syllables): [sophisticated, demonstration] (2 words)
       ;; Pct complex: (2/14)*100 ≈ 14.28%
       ;; Score: 0.4 * (7.0 + 14.28) = 0.4 * 21.28 ≈ 8.51
       (is (> (gunning-fog-index text) 8.0))))
@@ -439,7 +439,7 @@
   (testing "Correlation matrix structure"
     (let [docs {"d1" "apple banana" "d2" "apple banana" "d3" "cherry date"}
           corr (document-correlation-matrix docs :stop-words #{})]
-      (is (= 1.0 (get-in corr ["d1" "d2"])))
+      (is (= 1.0 (get-in corr ["d1" "d2")))
       (is (not= 1.0 (get-in corr ["d1" "d3"]))))))
 
 (deftest test-analysis-to-map
@@ -450,3 +450,12 @@
       (is (contains? result :top-words))
       (is (number? (:diversity result)))
       (is (number? (:readability result))))))
+
+(deftest test-syllable-counting
+  (testing "Basic syllable counts"
+    (is (= 1 (count-syllables "cat")))
+    (is (= 2 (count-syllables "apple")))
+    (is (= 3 (count-syllables "banana"))))
+  (testing "Vowel clusters and silent e"
+    (is (= 1 (count-syllables "quite")))
+    (is (= 2 (count-syllables "beautiful")))))

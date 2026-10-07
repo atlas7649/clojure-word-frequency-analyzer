@@ -47,6 +47,18 @@
     (str/ends-with? word "s") (if (not= (count word) 1) (str/substring word 0 (dec (count word))) word)
     :else word))
 
+(defn count-syllables
+  "Estimate the number of syllables in a word using vowel cluster counting.
+   Heuristics: remove trailing 'e', treat consecutive vowels as one syllable."
+  [word]
+  (let [w (str/lower-case word)
+        vowels #"[aeiouy]+"
+        cleaned-w (if (and (not= (count w) 0) (str/ends-with? w "e"))
+                     (str/substring w 0 (dec (count w)))
+                     w)
+        matches (re-seq vowels cleaned-w)]
+    (max 1 (count matches))))
+
 (defn tokenize
   "Split text into a sequence of lowercase words, removing non-alphanumeric characters."
   [text & {:keys [stem] :or {stem false}}]
@@ -168,13 +180,13 @@
 (defn gunning-fog-index
   "Calculate the Gunning Fog Index for a text.
    Formula: 0.4 * ((average sentence length) + (percentage of complex words))
-   Complex words are defined as words with 3 or more syllables (approximated here by length > 6)."
+   Complex words are defined as words with 3 or more syllables."
   [text]
   (let [sentences (str/split text #[\\.!] )]
        sentence-count (count (remove str/blank? sentences))
        words (tokenize text)
        word-count (count words)
-       complex-words (count (filter #(> (count %) 6) words))
+       complex-words (count (filter #(>= (count-syllables %) 3) words))
        avg-sentence-length (if (zero? sentence-count) 0 (/ word-count sentence-count))
        pct-complex (if (zero? word-count) 0 (* 100 (/ complex-words word-count)))]
     (if (or (zero? sentence-count) (zero? word-count))
