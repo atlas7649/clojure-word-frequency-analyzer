@@ -40,6 +40,8 @@
     (str/ends-with? word "ment") (str/substring word 0 (- (count word) 4))
     (str/ends-with? word "ion") (str/substring word 0 (- (count word) 3))
     (str/ends-with? word "ity") (str/substring word 0 (- (count word) 3))
+    (str/ends-with? word "ness") (str/substring word 0 (- (count word) 4))
+    (str/ends-with? word "ship") (str/substring word 0 (- (count word) 4))
     (str/ends-with? word "s") (if (not= (count word) 1) (str/substring word 0 (dec (count word))) word)
     :else word))
 
