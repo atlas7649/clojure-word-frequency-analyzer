@@ -17,10 +17,12 @@
 (defn normalize-text
   "Perform basic normalization: lower-case, trim, and collapse multiple spaces."
   [text]
-  (-> text
-       (str/lower-case)
-       (str/trim)
-       (str/replace #"\\s+" " ")))
+  (if (nil? text)
+    ""
+    (-> text
+         (str/lower-case)
+         (str/trim)
+         (str/replace #"\\s+" " "))))
 
 (defn clean-text
   "Remove specific patterns from text. By default, removes non-alphanumeric characters except spaces."
@@ -137,7 +139,7 @@
                         count (get freqs key-val 0)]
                     (assoc m k (/ count total))))
                 {} 
-                keywords)))))
+                keywords))))))
 
 (defn analyze-file
   "Read a file and return a map of word frequencies."
