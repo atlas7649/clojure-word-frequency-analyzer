@@ -34,6 +34,8 @@
     (str/ends-with? word "ing") (str/substring word 0 (- (count word) 3))
     (str/ends-with? word "ed") (str/substring word 0 (- (count word) 2))
     (str/ends-with? word "ies") (str/replace word #"ies$" "y")
+    (str/ends-with? word "ly") (str/substring word 0 (- (count word) 2))
+    (str/ends-with? word "ment") (str/substring word 0 (- (count word) 4))
     (str/ends-with? word "s") (if (not= (count word) 1) (str/substring word 0 (dec (count word))) word)
     :else word))
 
