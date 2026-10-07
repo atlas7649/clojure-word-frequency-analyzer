@@ -191,9 +191,14 @@
    :entropy (shannon-entropy text :stop-words stop-words :stem stem)})
 
 (defn batch-frequency-analysis
-  "Process multiple texts and return a map of labels to frequency maps."
+  "Process multiple texts and return a map of labels to frequency maps.
+   Uses pmap for parallel processing of documents."
   [texts-map & {:keys [stop-words stem] :or {stop-words default-stop-words stem false}}]
-  (reduce-kv (fn [m label text] (assoc m label (frequency-analysis text :stop-words stop-words :stem stem))) {} texts-map))
+  (let [entries (vec texts-map)]
+    (into {} 
+          (pmap (fn [[label text]] 
+                   [label (frequency-analysis text :stop-words stop-words :stem stem)]))
+          entries)))
 
 (defn jaccard-similarity
   "Calculate Jaccard similarity between two texts based on their sets of words."
