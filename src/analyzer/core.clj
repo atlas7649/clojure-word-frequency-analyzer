@@ -38,6 +38,8 @@
     (str/ends-with? word "ies") (str/replace word #"ies$" "y")
     (str/ends-with? word "ly") (str/substring word 0 (- (count word) 2))
     (str/ends-with? word "ment") (str/substring word 0 (- (count word) 4))
+    (str/ends-with? word "ation") (str/substring word 0 (- (count word) 4))
+    (str/ends-with? word "ition") (str/substring word 0 (- (count word) 4))
     (str/ends-with? word "ion") (str/substring word 0 (- (count word) 3))
     (str/ends-with? word "ity") (str/substring word 0 (- (count word) 3))
     (str/ends-with? word "ness") (str/substring word 0 (- (count word) 4))
