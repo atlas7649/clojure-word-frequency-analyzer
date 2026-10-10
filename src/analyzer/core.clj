@@ -4,6 +4,11 @@
 (def default-stop-words
   #{"the" "and" "a" "an" "of" "to" "in" "is" "it" "that" "as" "for" "was" "with" "on"})
 
+(def stop-words-library
+  {:general #{"i" "me" "my" "myself" "we" "our" "ours" "ourselves" "you" "your" "yours" "yourself" "yourselves" "he" "him" "his" "himself" "she" "her" "hers" "herself" "it" "its" "itself" "they" "them" "their" "theirs" "themselves" "what" "which" "who" "whom" "this" "that" "these" "those" "am" "is" "are" "was" "were" "be" "been" "being" "have" "has" "had" "having" "do" "does" "did" "doing" "a" "an" "the" "and" "but" "if" "or" "because" "as" "until" "while" "of" "at" "by" "for" "with" "about" "against" "between" "into" "through" "during" "before" "after" "above" "below" "to" "from" "up" "down" "in" "out" "on" "off" "over" "under" "again" "further" "then" "once" "here" "there" "when" "where" "why" "how" "all" "any" "both" "each" "few" "more" "most" "other" "some" "such" "no" "nor" "not" "only" "own" "same" "so" "than" "too" "very" "s" "t" "can" "will" "just" "don" "should" "now"}
+   :academic #{"thus" "therefore" "hence" "moreover" "furthermore" "consequently" "accordingly" "namely" "specifically" "indeed" "however" "nevertheless" "notwithstanding" "whereas" "although" "despite" "in-addition" "consequently" "further" "similarly" "conversely"}
+   :technical #{"code" "software" "system" "version" "update" "feature" "bug" "issue" "implementation" "performance" "configuration" "module" "parameter" "variable" "function" "class" "object" "interface" "api" "library" "package" "deployment" "environment" "production" "development" "test" "debug" "log" "error" "warning" "info"}})
+
 (defn add-stop-words
   "Add a collection of words to an existing set of stop-words."
   [stop-words words]
@@ -86,17 +91,24 @@
       tokens)))
 
 (defn frequency-analysis
-  "Calculate word frequencies, optionally filtering out stop words."
+  "Calculate word frequencies, optionally filtering out stop words.
+   `stop-words` can be a set of words or a key to the `stop-words-library`."
   [text & {:keys [stop-words stem] :or {stop-words default-stop-words stem false}}]
-  (->> (tokenize text :stem stem)
-       (remove #(contains? stop-words %))
-       (frequencies)))
+  (let [actual-stops (if (keyword? stop-words)
+                       (get stop-words-library stop-words default-stop-words)
+                       stop-words)]
+    (->> (tokenize text :stem stem)
+         (remove #(contains? actual-stops %))
+         (frequencies))))
 
 (defn vocabulary-size
   "Calculate the number of unique words in the text, optionally filtering stop words."
   [text & {:keys [stop-words stem] :or {stop-words default-stop-words stem false}}]
-  (count (set (->> (tokenize text :stem stem)
-                   (remove #(contains? stop-words %))))))
+  (let [actual-stops (if (keyword? stop-words)
+                       (get stop-words-library stop-words default-stop-words)
+                       stop-words)]
+    (count (set (->> (tokenize text :stem stem)
+                   (remove #(contains? actual-stops %)))))))
 
 (defn sorted-frequencies
   "Return frequencies sorted by value in descending order, optionally filtering by a minimum count."
@@ -121,7 +133,10 @@
   "Generate n-grams from the provided text, optionally filtering stop words."
   [text n & {:keys [stop-words stem] :or {stop-words nil stem false}}]
   (let [words (tokenize text :stem stem)
-        filtered-words (if stop-words (remove #(contains? stop-words %) words) words)]
+        actual-stops (if (keyword? stop-words)
+                       (get stop-words-library stop-words #{})
+                       stop-words)
+        filtered-words (if actual-stops (remove #(contains? actual-stops %) words) words)]
     (->> filtered-words
          (partition n 1)
          (frequencies))))
@@ -135,16 +150,22 @@
 (defn word-length-distribution
   "Calculate the frequency of word lengths in the text, optionally filtering stop words."
   [text & {:keys [stop-words stem] :or {stop-words default-stop-words stem false}}]
-  (->> (tokenize text :stem stem)
-       (remove #(contains? stop-words %))
-       (map count)
-       (frequencies)))
+  (let [actual-stops (if (keyword? stop-words)
+                       (get stop-words-library stop-words default-stop-words)
+                       stop-words)]
+    (->> (tokenize text :stem stem)
+         (remove #(contains? actual-stops %))
+         (map count)
+         (frequencies))))
 
 (defn average-word-length
   "Calculate the average length of words in the text, optionally filtering stop words."
   [text & {:keys [stop-words stem] :or {stop-words default-stop-words stem false}}]
-  (let [words (->> (tokenize text :stem stem)
-                    (remove #(contains? stop-words %)))]
+  (let [actual-stops (if (keyword? stop-words)
+                       (get stop-words-library stop-words default-stop-words)
+                       stop-words)
+        words (->> (tokenize text :stem stem)
+                    (remove #(contains? actual-stops %)))]
     (if (empty? words)
       0
       (/ (reduce + (map count words)) (count words)))))
@@ -229,8 +250,11 @@
 (defn jaccard-similarity
   "Calculate Jaccard similarity between two texts based on their sets of words."
   [text1 text2 & {:keys [stop-words stem] :or {stop-words default-stop-words stem false}}]
-  (let [set1 (set (->> (tokenize text1 :stem stem) (remove #(contains? stop-words %))))
-        set2 (set (->> (tokenize text2 :stem stem) (remove #(contains? stop-words %))))
+  (let [actual-stops (if (keyword? stop-words)
+                       (get stop-words-library stop-words default-stop-words)
+                       stop-words)
+        set1 (set (->> (tokenize text1 :stem stem) (remove #(contains? actual-stops %))))
+        set2 (set (->> (tokenize text2 :stem stem) (remove #(contains? actual-stops %))))
         intersection (count (clojure.set/intersection set1 set2))
         union (count (clojure.set/union set1 set2))]
     (if (zero? union) 0.0 (/ intersection union))))
@@ -267,8 +291,11 @@
 (defn hamming-distance
   "Calculate the Hamming distance between two texts based on the set of words present (binary vector)."
   [text1 text2 & {:keys [stop-words stem] :or {stop-words default-stop-words stem false}}]
-  (let [set1 (set (->> (tokenize text1 :stem stem) (remove #(contains? stop-words %))))
-        set2 (set (->> (tokenize text2 :stem stem) (remove #(contains? stop-words %))))
+  (let [actual-stops (if (keyword? stop-words)
+                       (get stop-words-library stop-words default-stop-words)
+                       stop-words)
+        set1 (set (->> (tokenize text1 :stem stem) (remove #(contains? actual-stops %))))
+        set2 (set (->> (tokenize text2 :stem stem) (remove #(contains? actual-stops %))))
         all-words (clojure.set/union set1 set2)]
     (count (filter (fn [w] (not= (contains? set1 w) (contains? set2 w))) all-words))))
 
@@ -330,7 +357,10 @@
   "Calculate Inverse Document Frequency for words across a collection of documents."
   [docs & {:keys [stop-words stem] :or {stop-words default-stop-words stem false}}]
   (let [num-docs (count docs)
-        all-tokens (map #(set (->> (tokenize % :stem stem) (remove #(contains? stop-words %)))) docs)
+        actual-stops (if (keyword? stop-words)
+                       (get stop-words-library stop-words default-stop-words)
+                       stop-words)
+        all-tokens (map #(set (->> (tokenize % :stem stem) (remove #(contains? actual-stops %)))) docs)
         vocabulary (apply set (mapcat identity all-tokens))]
     (if (zero? num-docs)
       {}
@@ -368,7 +398,10 @@
 (defn lexical-diversity
   "Calculate Type-Token Ratio (TTR) which is vocabulary size divided by total tokens."
   [text & {:keys [stop-words stem] :or {stop-words default-stop-words stem false}}]
-  (let [tokens (->> (tokenize text :stem stem) (remove #(contains? stop-words %)))]
+  (let [actual-stops (if (keyword? stop-words)
+                       (get stop-words-library stop-words default-stop-words)
+                       stop-words)
+        tokens (->> (tokenize text :stem stem) (remove #(contains? actual-stops %)))]
     (if (empty? tokens)
       0.0
       (/ (count (set tokens)) (count tokens)))))
@@ -377,7 +410,10 @@
   "Calculate Herdan's Vocabulary (TTR over a sequence of token windows).
    Returns a sequence of TTR values for windows of size window-size."
   [text window-size & {:keys [stop-words stem] :or {stop-words default-stop-words stem false}}]
-  (let [tokens (->> (tokenize text :stem stem) (remove #(contains? stop-words %)))]
+  (let [actual-stops (if (keyword? stop-words)
+                       (get stop-words-library stop-words default-stop-words)
+                       stop-words)
+        tokens (->> (tokenize text :stem stem) (remove #(contains? actual-stops %)))]
     (->> tokens
          (partition window-size 1)
          (map (fn [window]
