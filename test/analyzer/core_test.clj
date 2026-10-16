@@ -458,4 +458,25 @@
     (is (= 3 (count-syllables "banana"))))
   (testing "Vowel clusters and silent e"
     (is (= 1 (count-syllables "quite")))
-    (is (= 2 (count-syllables "beautiful")))))
+    (is (= 2 (count-syllables "beautiful"))))
+  (testing "Edge cases"
+    (is (= 0 (count-syllables "")))
+    (is (= 1 (count-syllables "a")))))
+
+(deftest test-similarity-edge-cases
+  (testing "Similarity with empty strings"
+    (is (= 0.0 (jaccard-similarity "" "")))
+    (is (= 0.0 (cosine-similarity "" "" :stop-words #{}))))
+  (testing "Distance with identical texts"
+    (is (= 0 (manhattan-distance "test" "test" :stop-words #{})))
+    (is (= 0 (euclidean-distance "test" "test" :stop-words #{})))))
+
+(deftest test-vector-edge-cases
+  (testing "Vector distances with identical vectors"
+    (is (= 0 (chebyshev-distance [1 2 3] [1 2 3])))
+    (is (= 0.0 (minkowski-distance [1 2] [1 2] 3))))
+  (testing "Vector distance report with identical vectors"
+    (let [report (vector-distance-report [1 1] [1 1])]
+      (is (= 0 (:manhattan report)))
+      (is (= 0 (:euclidean report)))
+      (is (= 0 (:chebyshev report)))))))
