@@ -4,6 +4,7 @@ A small utility to analyze word and n-gram frequencies in text documents.
 
 ## Usage
 
+### Basic Analysis
 ```clojure
 (require '[analyzer.core :as analyzer])
 
@@ -45,4 +46,15 @@ A small utility to analyze word and n-gram frequencies in text documents.
 
 (analyzer/document-correlation-matrix {"d1" "apple banana" "d2" "apple banana"})
 ;; => {"d1" {"d1" 1.0 "d2" 1.0} "d2" {"d1" 1.0 "d2" 1.0}}
+```
+
+### File Analysis
+```clojure
+(require '[analyzer.io :as analyzer-io])
+
+;; Analyze a single file
+(analyzer-io/analyze-file "path/to/document.txt")
+
+;; Analyze multiple files
+(analyzer-io/analyze-files ["doc1.txt" "doc2.txt"])
 ```
