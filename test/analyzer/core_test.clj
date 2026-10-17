@@ -133,11 +133,6 @@
 (deftest test-readability-score
   (testing "Readability score calculation"
     (let [text "This is a simple sentence. This is another one."]
-      ;; Words: [this is a simple sentence this is another one] (9 words)
-      ;; Sentences: 2
-      ;; avg-sentence-length: 9 / 2 = 4.5
-      ;; avg-word-length: (4+2+1+6+8+4+2+7+3) / 9 = 37 / 9 ≈ 4.11
-      ;; Score: 0.4 * 4.5 + 0.6 * (37/9) = 1.8 + 22.2/9 = 1.8 + 2.466 = 4.266
       (is (> (text-readability-score text) 4.0))))
   (testing "Readability score with empty text"
     (is (= 0.0 (text-readability-score "")))))
@@ -145,14 +140,6 @@
 (deftest test-gunning-fog-index
   (testing "Gunning Fog Index calculation"
     (let [text "The quick brown fox jumps over the lazy dog. This is a sophisticated demonstration."]
-      ;; Sentence 1: 9 words
-      ;; Sentence 2: 5 words
-      ;; Total words: 14
-      ;; Total sentences: 2
-      ;; Avg sentence length: 14 / 2 = 7.0
-      ;; Complex words (>=3 syllables): [sophisticated, demonstration] (2 words)
-      ;; Pct complex: (2/14)*100 ≈ 14.28%
-      ;; Score: 0.4 * (7.0 + 14.28) = 0.4 * 21.28 ≈ 8.51
       (is (> (gunning-fog-index text) 8.0))))
   (testing "Gunning Fog Index with empty text"
     (is (= 0.0 (gunning-fog-index "")))))
@@ -188,45 +175,26 @@
   (testing "Cosine similarity"
     (let [t1 "apple apple banana"
           t2 "apple banana banana"]
-      ;; f1: {apple 2, banana 1}, f2: {apple 1, banana 2}
-      ;; dot: 2*1 + 1*2 = 4
-      ;; mag1: sqrt(4+1)=sqrt(5), mag2: sqrt(1+4)=sqrt(5)
-      ;; cos: 4 / (sqrt(5)*sqrt(5)) = 4/5 = 0.8
       (is (= 0.8 (cosine-similarity t1 t2 :stop-words #{})))))
   (testing "Manhattan distance"
     (let [t1 "apple apple banana"
           t2 "apple banana banana"]
-      ;; f1: {apple 2, banana 1}, f2: {apple 1, banana 2}
-      ;; dist: |2-1| + |1-2| = 1 + 1 = 2
       (is (= 2 (manhattan-distance t1 t2 :stop-words #{})))))
   (testing "Euclidean distance"
     (let [t1 "apple apple banana"
           t2 "apple banana banana"]
-      ;; f1: {apple 2, banana 1}, f2: {apple 1, banana 2}
-      ;; dist: sqrt((2-1)^2 + (1-2)^2) = sqrt(1 + 1) = sqrt(2)
       (is (= (Math/sqrt 2) (euclidean-distance t1 t2 :stop-words #{})))))
   (testing "Hamming distance"
     (let [t1 "apple banana"
           t2 "apple cherry"]
-      ;; sets: {apple banana} {apple cherry}
-      ;; union: {apple banana cherry}
-      ;; diffs: banana(T,F), cherry(F,T) -> 2
       (is (= 2 (hamming-distance t1 t2 :stop-words #{})))))
   (testing "Canberra distance"
     (let [t1 "apple apple banana"
           t2 "apple banana banana"]
-      ;; f1: {apple 2, banana 1}, f2: {apple 1, banana 2}
-      ;; apple: |2-1| / (2+1) = 1/3
-      ;; banana: |1-2| / (1+2) = 1/3
-      ;; dist: 1/3 + 1/3 = 2/3
       (is (= (/ 2 3) (canberra-distance t1 t2 :stop-words #{})))))
   (testing "Bray-Curtis dissimilarity"
     (let [t1 "apple apple banana"
           t2 "apple banana banana"]
-      ;; f1: {apple 2, banana 1}, f2: {apple 1, banana 2}
-      ;; sum-diff: |2-1| + |1-2| = 2
-      ;; sum-total: (2+1) + (1+2) = 6
-      ;; dist: 2/6 = 1/3
       (is (= (/ 1 3) (bray-curtis-dissimilarity t1 t2 :stop-words #{})))))
   (testing "Similarity report"
     (let [report (text-similarity-report "apple banana" "apple cherry" :stop-words #{})]
@@ -243,50 +211,33 @@
   (testing "KL Divergence different distributions"
     (let [t1 "apple apple banana"
           t2 "apple banana banana"]
-      ;; P: {apple 2/3, banana 1/3}, Q: {apple 1/3, banana 2/3}
-      ;; KL = (2/3 * log( (2/3)/(1/3) )) + (1/3 * log( (1/3)/(2/3) ))
-      ;; KL = (2/3 * log 2) + (1/3 * log 0.5) = (2/3 * log 2) - (1/3 * log 2) = (1/3 * log 2)
       (is (= (/ (Math/log 2) 3) (kullback-leibler-divergence t1 t2 :stop-words #{})))))
   (testing "KL Divergence with disjoint sets"
     (let [t1 "apple"
           t2 "banana"]
-      ;; P: {apple 1.0}, Q: {banana 1.0}
-      ;; KL = 1.0 * log(1.0 / epsilon)
       (is (> (kullback-leibler-divergence t1 t2 :stop-words #{}) 10.0))))))
 
 (deftest test-tfidf
   (testing "IDF calculation"
     (let [docs ["apple banana" "apple cherry" "banana date"]
           idf (calculate-idf docs :stop-words #{})]
-      ;; apple appears in 2/3 docs: log(3/2)
-      ;; banana appears in 2/3 docs: log(3/2)
-      ;; cherry appears in 1/3 docs: log(3/1)
-      ;; date appears in 1/3 docs: log(3/1)
       (is (= (Math/log 1.5) (get idf "apple")))
       (is (= (Math/log 3.0) (get idf "cherry")))))
   (testing "TF-IDF Analysis"
     (let [docs-map {"d1" "apple apple banana" "d2" "apple cherry"}
           tfidf (tf-idf-analysis docs-map :stop-words #{})]
-      ;; d1 TF: apple=2/3, banana=1/3
-      ;; d2 TF: apple=1/2, cherry=1/2
-      ;; IDF: apple=log(2/2)=0, banana=log(2/1)=log 2, cherry=log(2/1)=log 2
       (is (= 0.0 (get-in tfidf ["d1" "apple")))
       (is (= (* (/ 1 3) (Math/log 2)) (get-in tfidf ["d1" "banana")))
       (is (= (* (/ 1 2) (Math/log 2)) (get-in tfidf ["d2" "cherry"])))))
   (testing "TF-IDF Top Terms"
     (let [docs-map {"d1" "apple apple banana" "d2" "apple cherry"}
           top-terms (tf-idf-top-terms docs-map 1 :stop-words #{})]
-      ;; d1: banana is most important (apple is 0.0)
-      ;; d2: cherry is most important (apple is 0.0)
       (is (= [["banana" (* (/ 1 3) (Math/log 2))]] (get top-terms "d1")))
       (is (= [["cherry" (* (/ 1 2) (Math/log 2))]] (get top-terms "d2")))))))
 
 (deftest test-lexical-diversity
   (testing "Lexical diversity calculation"
     (let [text "apple banana apple orange"]
-      ;; Tokens: [apple banana apple orange] (4)
-      ;; Unique: {apple banana orange} (3)
-      ;; TTR: 3/4 = 0.75
       (is (= 0.75 (lexical-diversity text :stop-words #{})))))
   (testing "Lexical diversity with empty text"
     (is (= 0.0 (lexical-diversity "")))))
@@ -295,7 +246,6 @@
   (testing "Herdan Vocabulary calculation"
     (let [text "apple banana apple banana cherry date"
           ttr (herdan-vocabulary text 3 :stop-words #{})]
-      ;; Windows: [apple banana apple] -> 2/3, [banana apple banana] -> 2/3, [apple banana cherry] -> 3/3, [banana cherry date] -> 3/3
       (is (= [2/3 2/3 1.0 1.0] ttr)))))
   (testing "Herdan Vocabulary empty text"
     (is (= [] (herdan-vocabulary "" 3 :stop-words #{})))))
@@ -304,8 +254,6 @@
   (testing "Entropy of uniform distribution"
     (let [text "apple banana"
           entropy (shannon-entropy text :stop-words #{})]
-      ;; Probabilities: 0.5, 0.5
-      ;; Entropy: 0.5*log(0.5) + 0.5*log(0.5) = log(0.5)
       (is (= (Math/log 0.5) entropy))))
   (testing "Entropy of single word"
     (is (= 0.0 (shannon-entropy "apple apple apple" :stop-words #{}))))
@@ -339,9 +287,6 @@
   (testing "Zipf's law distribution"
     (let [text "apple apple apple banana banana cherry"
           analysis (zipfs-law-analysis text 3 :stop-words #{})]
-      ;; Rank 1: apple (3), predicted: 3/1 = 3
-      ;; Rank 2: banana (2), predicted: 3/2 = 1.5
-      ;; Rank 3: cherry (1), predicted: 3/3 = 1
       (is (= [1 3 3.0] (first analysis)))
       (is (= [2 2 1.5] (second analysis)))
       (is (= [3 1 1.0] (third analysis)))))
@@ -372,10 +317,6 @@
   (testing "Significance based on frequency * length"
     (let [text "apple apple banana cherry cherry cherry"
           sig (most-significant-words text 2 :stop-words #{})]
-      ;; apple: 2 * 5 = 10
-      ;; banana: 1 * 6 = 6
-      ;; cherry: 3 * 6 = 18
-      ;; Expected: [["cherry" 18] ["apple" 10]]
       (is (= [["cherry" 18] ["apple" 10]] sig))))
   (testing "Empty text for significance"
     (is (= [] (most-significant-words "" 5 :stop-words #{}))))))
@@ -383,7 +324,6 @@
 (deftest test-extractive-summarize
   (testing "Basic summarization"
     (let [text "The quick brown fox jumps over the lazy dog. The fox is very quick. The dog is lazy."]
-      ;; Each sentence is a doc. TF-IDF will highlight distinct words.
       (let [summary (extractive-summarize text 1 :stop-words #{})]
         (is (not (empty? summary))))))
   (testing "Summarization with empty text"
@@ -408,10 +348,6 @@
   (testing "Text to TF-IDF vector"
     (let [corpus ["apple banana" "apple cherry" "banana date"]
           text "apple apple banana"
-          ;; IDF: apple=log(3/2), banana=log(3/2), cherry=log(3/1), date=log(3/1)
-          ;; TF: apple=2/3, banana=1/3
-          ;; Vocab (sorted): [apple banana cherry date]
-          ;; TF-IDF: [ (2/3)*log(1.5), (1/3)*log(1.5), 0, 0 ]
           vec (text-to-tfidf-vector text corpus :stop-words #{})]
       (is (= 4 (count vec)))
       (is (= (* (/ 2 3) (Math/log 1.5)) (first vec)))
@@ -466,7 +402,7 @@
 (deftest test-similarity-edge-cases
   (testing "Similarity with empty strings"
     (is (= 0.0 (jaccard-similarity "" "")))
-    (is (= 0.0 (cosine-similarity "" "" :stop-words #{}))))
+    (is (= 0.0 (cosine-similarity "" "" :stop-words #{})))))
   (testing "Distance with identical texts"
     (is (= 0 (manhattan-distance "test" "test" :stop-words #{})))
     (is (= 0 (euclidean-distance "test" "test" :stop-words #{})))))
@@ -474,7 +410,7 @@
 (deftest test-vector-edge-cases
   (testing "Vector distances with identical vectors"
     (is (= 0 (chebyshev-distance [1 2 3] [1 2 3])))
-    (is (= 0.0 (minkowski-distance [1 2] [1 2] 3))))
+    (is (= 0.0 (minkowski-distance [1 2] [1 2] 3)))))
   (testing "Vector distance report with identical vectors"
     (let [report (vector-distance-report [1 1] [1 1])]
       (is (= 0 (:manhattan report)))
