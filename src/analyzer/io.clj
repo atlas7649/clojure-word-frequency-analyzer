@@ -1,6 +1,7 @@
 (ns analyzer.io
   (:require [clojure.java.io :as io]
-            [analyzer.core :as analyzer]))
+            [analyzer.core :as analyzer]
+            [cheshire.core :as json]))
 
 (defn read-file-text
   "Reads the content of a file into a string."
@@ -38,3 +39,8 @@
                               (assoc inner-acc word (+ count (get inner-acc word 0))))
                             acc freqs)))
             {} files)))
+
+(defn export-analysis-to-json
+  "Exports analysis results to a JSON file."
+  [results output-path]
+  (spit output-path (json/generate-string results)))
