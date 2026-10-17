@@ -8,11 +8,16 @@
   (with-open [r (io/reader file-path)]
     (.readString r)))
 
+(defn analyze-text
+  "Performs frequency analysis on a provided string."
+  [text & {:keys [stop-words stem] :or {stop-words nil stem false}}]
+  (analyzer/frequency-analysis text :stop-words stop-words :stem stem))
+
 (defn analyze-file
   "Performs frequency analysis on a file."
   [file-path & {:keys [stop-words stem] :or {stop-words nil stem false}}]
   (let [text (read-file-text file-path)]
-    (analyzer/frequency-analysis text :stop-words stop-words :stem stem)))
+    (analyze-text text :stop-words stop-words :stem stem)))
 
 (defn analyze-files
   "Performs frequency analysis on multiple files, returning a map of filename to results."

@@ -1,6 +1,7 @@
 (ns analyzer.core-test
   (:require [clojure.test :refer [deftest is testing]]
-            [analyzer.core :refer [tokenize frequency-analysis vocabulary-size generate-ngrams sorted-frequencies most-common relative-frequencies word-length-distribution average-word-length text-summary keyword-density text-readability-score text-complexity-metrics batch-frequency-analysis jaccard-similarity cosine-similarity manhattan-distance euclidean-distance hamming-distance text-similarity-report calculate-idf tf-idf-analysis tf-idf-top-terms clean-text lexical-diversity global-ngram-analysis normalize-text add-stop-words remove-stop-words common-words-analysis document-frequency-mapping shannon-entropy zipfs-law-analysis gunning-fog-index word-cloud-data text-to-freq-map cluster-documents kullback-leibler-divergence herdan-vocabulary dominant-ngram canberra-distance bray-curtis-dissimilarity most-significant-words extractive-summarize simple-stem text-to-vector chebyshev-distance minkowski-distance vector-distance-report text-to-tfidf-vector document-term-matrix pearson-correlation document-correlation-matrix analysis-to-map count-syllables]]))
+            [analyzer.core :refer [tokenize frequency-analysis vocabulary-size generate-ngrams sorted-frequencies most-common relative-frequencies word-length-distribution average-word-length text-summary keyword-density text-readability-score text-complexity-metrics batch-frequency-analysis jaccard-similarity cosine-similarity manhattan-distance euclidean-distance hamming-distance text-similarity-report calculate-idf tf-idf-analysis tf-idf-top-terms clean-text lexical-diversity global-ngram-analysis normalize-text add-stop-words remove-stop-words common-words-analysis document-frequency-mapping shannon-entropy zipfs-law-analysis gunning-fog-index word-cloud-data text-to-freq-map cluster-documents kullback-leibler-divergence herdan-vocabulary dominant-ngram canberra-distance bray-curtis-dissimilarity most-significant-words extractive-summarize simple-stem text-to-vector chebyshev-distance minkowski-distance vector-distance-report text-to-tfidf-vector document-term-matrix pearson-correlation document-correlation-matrix analysis-to-map count-syllables]]
+            [analyzer.io :refer [analyze-text]]))
 
 (deftest test-tokenize
   (testing "Basic tokenization"
@@ -319,7 +320,7 @@
           sig (most-significant-words text 2 :stop-words #{})]
       (is (= [["cherry" 18] ["apple" 10]] sig))))
   (testing "Empty text for significance"
-    (is (= [] (most-significant-words "" 5 :stop-words #{}))))))
+    (is (= [] (most-significant-words "" 5 :stop-words #{})))))
 
 (deftest test-extractive-summarize
   (testing "Basic summarization"
@@ -415,4 +416,11 @@
     (let [report (vector-distance-report [1 1] [1 1])]
       (is (= 0 (:manhattan report)))
       (is (= 0 (:euclidean report)))
-      (is (= 0 (:chebyshev report)))))))
+      (is (= 0 (:chebyshev report))))))
+
+(deftest test-analyze-text
+  (testing "Analyze text via io wrapper"
+    (let [text "apple banana apple"
+          freqs (analyze-text text :stop-words #{})]
+      (is (= 2 (get freqs "apple")))
+      (is (= 1 (get freqs "banana"))))))
