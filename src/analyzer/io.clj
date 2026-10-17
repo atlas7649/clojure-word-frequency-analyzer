@@ -44,3 +44,14 @@
   "Exports analysis results to a JSON file."
   [results output-path]
   (spit output-path (json/generate-string results)))
+
+(defn export-analysis-to-csv
+  "Exports frequency analysis results to a CSV file with 'word,count' headers."
+  [results output-path]
+  (let [header "word,count\n"
+        rows (->> results
+                  (sort-by val >)
+                  (map (fn [[word count]] (str word "," count)))
+                  (clojure.string/join "\n"))
+        content (str header rows)]
+    (spit output-path content)))

@@ -61,4 +61,8 @@ A small utility to analyze word and n-gram frequencies in text documents.
 ;; Export results to JSON
 (let [results (analyzer-io/analyze-file "document.txt")]
   (analyzer-io/export-analysis-to-json results "results.json"))
+
+;; Export results to CSV
+(let [results (analyzer-io/analyze-file "document.txt")]
+  (analyzer-io/export-analysis-to-csv results "results.csv"))
 ```
